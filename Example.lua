@@ -4,7 +4,7 @@
     Visuals   : WindUI-inspired (colors, radius, font)
 ]]
 
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nail120212/nexxware-ui/refs/heads/main/Library.lua"))()
+local Library = loadstring(game:HttpGet("YOUR_NEXXWARE_LIBRARY_URL_HERE"))()
 
 local Options = Library.Options
 local Toggles = Library.Toggles

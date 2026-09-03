@@ -6372,14 +6372,14 @@ do
 
         local Holder = New("Frame", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 21),
+            Size = UDim2.new(1, 0, 0, 28), -- modern taller button
             Parent = Container,
         })
 
         New("UIListLayout", {
             FillDirection = Enum.FillDirection.Horizontal,
             HorizontalFlex = Enum.UIFlexAlignment.Fill,
-            Padding = UDim.new(0, 9),
+            Padding = UDim.new(0, 8),
             Parent = Holder,
         })
 
@@ -6390,7 +6390,7 @@ do
                 Size = UDim2.fromScale(1, 1),
                 Text = Button.Text,
                 TextSize = 14,
-                TextTransparency = 0.4,
+                TextTransparency = 0.25,
                 Visible = Button.Visible,
                 Parent = Holder,
             })
@@ -6398,13 +6398,14 @@ do
             local Stroke = New("UIStroke", {
                 Color = "OutlineColor",
                 Transparency = Button.Disabled and 0.5 or 0,
+                Thickness = 1,
                 Parent = Base,
             })
 
             table.insert(
                 Library.Corners,
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, Library.CornerRadius / 2),
+                    CornerRadius = UDim.new(0, math.max(6, Library.CornerRadius - 2)),
                     Parent = Base,
                 })
             )
@@ -6996,7 +6997,7 @@ do
         local Button = New("TextButton", {
             Active = not Toggle.Disabled,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 18),
+            Size = UDim2.new(1, 0, 0, 22), -- taller for modern WindUI-style switch
             Text = "",
             Visible = Toggle.Visible,
             Parent = Container,
@@ -7004,7 +7005,7 @@ do
 
         local Label = New("TextLabel", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -40, 1, 0),
+            Size = UDim2.new(1, -48, 1, 0),
             Text = Toggle.Text,
             TextSize = 14,
             TextTransparency = 0.4,
@@ -7019,11 +7020,12 @@ do
             Parent = Label,
         })
 
+        -- Modern WindUI-style switch (larger + smoother)
         local Switch = New("Frame", {
-            AnchorPoint = Vector2.new(1, 0),
+            AnchorPoint = Vector2.new(1, 0.5),
             BackgroundColor3 = "MainColor",
-            Position = UDim2.fromScale(1, 0),
-            Size = UDim2.fromOffset(32, 18),
+            Position = UDim2.new(1, 0, 0.5, 0),
+            Size = UDim2.fromOffset(38, 20),
             Parent = Button,
         })
         New("UICorner", {
@@ -7039,6 +7041,7 @@ do
         })
         local SwitchStroke = New("UIStroke", {
             Color = "OutlineColor",
+            Thickness = 1,
             Parent = Switch,
         })
 
@@ -13680,7 +13683,8 @@ function Library:CreateWindow(WindowInfo)
     end
 
     if Library.IsMobile then
-        local ToggleButton = Library:AddDraggableButton("Toggle", function()
+        -- Improved floating buttons (closer to WindUI style)
+        local ToggleButton = Library:AddDraggableButton("Nexxware", function()
             Library:Toggle()
         end, true, true)
 
