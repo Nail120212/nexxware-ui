@@ -2,24 +2,17 @@
     Nexxware UI Library
     ===================
     Structure : Obsidian (tabs + left/right groupboxes + search)
-    Visuals   : WindUI-inspired (modern surfaces, radius, colors, font)
+    Visuals   : WindUI-inspired (deeper colors, radius 14, GothamMedium)
     
-    Features kept/added:
-    - CreateWindow with modern radius & sizing
-    - AddTab / AddKeyTab
-    - AddLeftGroupbox / AddRightGroupbox
-    - Searchbar + GlobalSearch
-    - All core elements (Toggle, Button, Slider, Dropdown, Input, Label, Divider, etc.)
-    - Notifications
-    - Dialogs
-    - Higher CornerRadius (12)
-    - WindUI color language (deep bg, zinc surfaces, violet accent)
-    - GothamMedium font
-    - Improved MinSize / drag friendly defaults
-    
-    No ThemeManager / SaveManager required.
-    
-    Progressive full visual rewrite in progress.
+    Added / Changed:
+    - Lucide icons (user URL)
+    - CornerRadius 14 + deeper palette
+    - Toggle / Button / Slider modernized
+    - WindUI-style bottom bar + live size display (W × H)
+    - AddTag / AddParagraph / AddCode / AddSection (collapsible)
+    - Floating open + lock buttons always available
+    - Left/Right Groupboxes kept
+    - No ThemeManager / SaveManager
 ]]
 
 local cloneref = (cloneref or clonereference or function(instance: any)
@@ -291,19 +284,19 @@ local Library = {
     Signals = {},
     UnloadSignals = {},
 
-    OriginalMinSize = Vector2.new(520, 380),
-    MinSize = Vector2.new(520, 380),
+    OriginalMinSize = Vector2.new(560, 400),
+    MinSize = Vector2.new(560, 400),
     DPIScale = 1,
-    CornerRadius = 12, -- Stronger WindUI-style rounding
+    CornerRadius = 14, -- Closer to WindUI (WindUI uses ~16)
 
     --// Scheme \\--  (Nexxware: Obsidian structure + WindUI visual language)
     IsLightTheme = false,
     Scheme = {
-        BackgroundColor = Color3.fromHex("#0f0f0f"), -- Deep WindUI-style bg
-        MainColor = Color3.fromHex("#18181b"),       -- Zinc surface
-        AccentColor = Color3.fromHex("#8b5cf6"),     -- Modern violet accent
-        OutlineColor = Color3.fromHex("#27272a"),    -- Soft zinc outline
-        FontColor = Color3.fromHex("#fafafa"),
+        BackgroundColor = Color3.fromHex("#0c0c0c"), -- Deeper
+        MainColor = Color3.fromHex("#161616"),       -- WindUI-like surface
+        AccentColor = Color3.fromHex("#8b5cf6"),     -- Violet
+        OutlineColor = Color3.fromHex("#2a2a2a"),
+        FontColor = Color3.fromHex("#f4f4f5"),
         Font = Font.fromEnum(Enum.Font.GothamMedium),
 
         RedColor = Color3.fromRGB(239, 68, 68),
@@ -416,7 +409,7 @@ local Templates = {
         SearchbarSize = UDim2.fromScale(1, 1),
         GlobalSearch = false,
 
-        CornerRadius = 12, -- Stronger WindUI-style
+        CornerRadius = 14,
         NotifySide = "Right",
         ShowCustomCursor = true,
 
@@ -1493,20 +1486,47 @@ type IconModule = {
     GetAsset: (Name: string) -> Icon?,
 }
 
-local FetchIcons = false
+-- Nexxware Lucide icons (user provided)
+local LucideIcons = nil
+local function LoadLucideIcons()
+    if LucideIcons then return LucideIcons end
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/Nail120212/NexLib/refs/heads/main/Icons/lucide.lua"))()
+    end)
+    if success and typeof(result) == "table" then
+        LucideIcons = result
+    else
+        LucideIcons = {}
+    end
+    return LucideIcons
+end
+
+local FetchIcons = true
 local Icons: IconModule | nil = nil
 
 function Library:GetIcon(IconName: string)
-    if not FetchIcons or not Icons then
-        return
+    if not IconName then return end
+
+    -- Try user Lucide first
+    local lucide = LoadLucideIcons()
+    local assetId = lucide[IconName] or lucide[IconName:lower()]
+    if assetId then
+        return {
+            Url = assetId,
+            ImageRectOffset = Vector2.zero,
+            ImageRectSize = Vector2.zero,
+        }
     end
 
-    local Success, Icon = pcall(Icons.GetAsset, IconName)
-    if not Success then
-        return
+    -- Fallback to original system if present
+    if Icons then
+        local Success, Icon = pcall(Icons.GetAsset, IconName)
+        if Success and Icon then
+            return Icon
+        end
     end
 
-    return Icon
+    return nil
 end
 
 function Library:GetCustomIcon(IconName: string): any
@@ -6304,6 +6324,260 @@ do
         return Label
     end
 
+    -- Nexxware: Collapsible Section (basic Tab Section style)
+    function Funcs:AddSection(Title, Opened)
+        if self.Destroyed then return nil end
+
+        local Groupbox = self
+        local Container = Groupbox.Container
+        local IsOpen = Opened ~= false
+
+        local SectionHolder = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = Container,
+        })
+
+        local Header = New("TextButton", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 28),
+            Text = "",
+            Parent = SectionHolder,
+        })
+
+        local Chevron = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromOffset(20, 20),
+            Position = UDim2.new(1, -20, 0.5, -10),
+            Text = IsOpen and "v" or ">",
+            TextSize = 14,
+            TextTransparency = 0.4,
+            Parent = Header,
+        })
+
+        local TitleLabel = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -28, 1, 0),
+            Text = Title or "Section",
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextTransparency = 0.25,
+            FontFace = Library.Scheme.Font,
+            Parent = Header,
+        })
+
+        local Content = New("Frame", {
+            BackgroundTransparency = 1,
+            Position = UDim2.fromOffset(0, 28),
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Visible = IsOpen,
+            Parent = SectionHolder,
+        })
+
+        Header.MouseButton1Click:Connect(function()
+            IsOpen = not IsOpen
+            Content.Visible = IsOpen
+            Chevron.Text = IsOpen and "v" or ">"
+            Groupbox:Resize()
+        end)
+
+        local Section = {
+            Type = "Section",
+            Content = Content,
+            SetOpen = function(_, open)
+                IsOpen = open
+                Content.Visible = open
+                Chevron.Text = open and "v" or ">"
+                Groupbox:Resize()
+            end,
+            Destroy = function()
+                SectionHolder:Destroy()
+                Groupbox:Resize()
+            end,
+        }
+
+        table.insert(Groupbox.Elements, Section)
+        Groupbox:Resize()
+        return Section
+    end
+
+    -- Nexxware: Tag component (WindUI-style)
+    function Funcs:AddTag(Text, Color)
+        if self.Destroyed then return nil end
+
+        local Groupbox = self
+        local Container = Groupbox.Container
+
+        local TagFrame = New("Frame", {
+            BackgroundColor3 = Color or Library.Scheme.AccentColor,
+            BackgroundTransparency = 0.85,
+            Size = UDim2.new(0, 0, 0, 22),
+            AutomaticSize = Enum.AutomaticSize.X,
+            Parent = Container,
+        })
+        New("UICorner", {
+            CornerRadius = UDim.new(0, 6),
+            Parent = TagFrame,
+        })
+        New("UIPadding", {
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            Parent = TagFrame,
+        })
+        New("UIStroke", {
+            Color = Color or Library.Scheme.AccentColor,
+            Thickness = 1,
+            Transparency = 0.6,
+            Parent = TagFrame,
+        })
+
+        local TagLabel = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+            Text = Text or "Tag",
+            TextSize = 12,
+            TextColor3 = Color or Library.Scheme.AccentColor,
+            FontFace = Library.Scheme.Font,
+            Parent = TagFrame,
+        })
+
+        local Tag = {
+            Type = "Tag",
+            Frame = TagFrame,
+            SetText = function(_, t)
+                TagLabel.Text = t
+            end,
+            Destroy = function()
+                TagFrame:Destroy()
+                Groupbox:Resize()
+            end,
+        }
+
+        table.insert(Groupbox.Elements, Tag)
+        Groupbox:Resize()
+        return Tag
+    end
+
+    -- Nexxware: Paragraph (better multi-line text)
+    function Funcs:AddParagraph(Title, Content)
+        if self.Destroyed then return nil end
+
+        local Groupbox = self
+        local Container = Groupbox.Container
+
+        local Holder = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = Container,
+        })
+
+        if Title and Title ~= "" then
+            New("TextLabel", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 16),
+                Text = Title,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                FontFace = Library.Scheme.Font,
+                TextTransparency = 0.15,
+                Parent = Holder,
+            })
+        end
+
+        local Body = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Position = UDim2.fromOffset(0, Title and Title ~= "" and 18 or 0),
+            Text = Content or "",
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Top,
+            TextWrapped = true,
+            TextTransparency = 0.4,
+            FontFace = Library.Scheme.Font,
+            Parent = Holder,
+        })
+
+        local Paragraph = {
+            Type = "Paragraph",
+            SetContent = function(_, t)
+                Body.Text = t
+            end,
+            Destroy = function()
+                Holder:Destroy()
+                Groupbox:Resize()
+            end,
+        }
+
+        table.insert(Groupbox.Elements, Paragraph)
+        Groupbox:Resize()
+        return Paragraph
+    end
+
+    -- Nexxware: Code box
+    function Funcs:AddCode(Code, Language)
+        if self.Destroyed then return nil end
+
+        local Groupbox = self
+        local Container = Groupbox.Container
+
+        local CodeFrame = New("Frame", {
+            BackgroundColor3 = "MainColor",
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = Container,
+        })
+        New("UICorner", {
+            CornerRadius = UDim.new(0, 8),
+            Parent = CodeFrame,
+        })
+        New("UIStroke", {
+            Color = "OutlineColor",
+            Thickness = 1,
+            Parent = CodeFrame,
+        })
+        New("UIPadding", {
+            PaddingTop = UDim.new(0, 10),
+            PaddingBottom = UDim.new(0, 10),
+            PaddingLeft = UDim.new(0, 12),
+            PaddingRight = UDim.new(0, 12),
+            Parent = CodeFrame,
+        })
+
+        local CodeLabel = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Text = Code or "",
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Top,
+            TextWrapped = true,
+            Font = Enum.Font.Code,
+            TextColor3 = Library.Scheme.FontColor,
+            Parent = CodeFrame,
+        })
+
+        local CodeBox = {
+            Type = "Code",
+            SetCode = function(_, c)
+                CodeLabel.Text = c
+            end,
+            Destroy = function()
+                CodeFrame:Destroy()
+                Groupbox:Resize()
+            end,
+        }
+
+        table.insert(Groupbox.Elements, CodeBox)
+        Groupbox:Resize()
+        return CodeBox
+    end
+
     function Funcs:AddButton(...)
         if self.Destroyed then return nil end
 
@@ -7529,7 +7803,7 @@ do
 
         local Holder = New("Frame", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, Info.Compact and 15 or 33),
+            Size = UDim2.new(1, 0, 0, Info.Compact and 18 or 38), -- taller for modern slider
             Visible = Slider.Visible,
             Parent = Container,
         })
@@ -7551,13 +7825,19 @@ do
             AnchorPoint = Vector2.new(0, 1),
             BackgroundColor3 = "MainColor",
             Position = UDim2.fromScale(0, 1),
-            Size = UDim2.new(1, 0, 0, 15),
+            Size = UDim2.new(1, 0, 0, 18), -- taller modern track
             Text = "",
             Parent = Holder,
         })
 
+        New("UICorner", {
+            CornerRadius = UDim.new(0, 6),
+            Parent = Bar,
+        })
+
         New("UIStroke", {
             Color = "OutlineColor",
+            Thickness = 1,
             Parent = Bar,
         })
 
@@ -10904,72 +11184,95 @@ function Library:CreateWindow(WindowInfo)
             Library:ApplyLucideIcon(MoveIconImage, MoveIcon)
         end
 
-        --// Bottom Bar \\--
+        --// Bottom Bar (WindUI style) \\--
         BottomBackground = New("Frame", {
             AnchorPoint = Vector2.new(0, 1),
-            BackgroundColor3 = function()
-                return Library:GetBetterColor(Library.Scheme.BackgroundColor, 4)
-            end,
+            BackgroundTransparency = 1,
             Position = UDim2.fromScale(0, 1),
-            Size = UDim2.new(1, 0, 0, 20 + WindowInfo.CornerRadius),
-            Parent = MainFrame
-        })
-        Library:MakeLine(MainFrame, {
-            AnchorPoint = Vector2.new(0, 1),
-            Position = UDim2.new(0, 0, 1, -20),
-            Size = UDim2.new(1, 0, 0, 1),
+            Size = UDim2.new(1, 0, 0, 22),
+            Parent = MainFrame,
+            Visible = false, -- replaced by new BottomBar
         })
 
         local BottomBar = New("Frame", {
             AnchorPoint = Vector2.new(0, 1),
-            BackgroundTransparency = 1,
+            BackgroundColor3 = "MainColor",
+            BackgroundTransparency = 0.35,
             Position = UDim2.fromScale(0, 1),
-            Size = UDim2.new(1, 0, 0, 20),
+            Size = UDim2.new(1, 0, 0, 22),
             Parent = MainFrame,
+            ZIndex = 5,
         })
         table.insert(
             Library.Corners,
             New("UICorner", {
                 CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                Parent = BottomBackground,
+                Parent = BottomBar,
             })
         )
 
-        --// Footer \\-
+        -- Footer text
         FooterLabel = New("TextLabel", {
             BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
+            Size = UDim2.new(1, -40, 1, 0),
+            Position = UDim2.fromOffset(10, 0),
             Text = WindowInfo.Footer,
-            TextSize = 14,
-            TextTransparency = 0.5,
+            TextSize = 13,
+            TextTransparency = 0.45,
+            TextXAlignment = Enum.TextXAlignment.Left,
             Parent = BottomBar,
+            ZIndex = 6,
         })
 
-        --// Resize Button \\--
+        -- Size display (shows current window size)
+        local SizeLabel = New("TextLabel", {
+            BackgroundTransparency = 1,
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -28, 0.5, 0),
+            Size = UDim2.fromOffset(80, 16),
+            Text = "",
+            TextSize = 11,
+            TextTransparency = 0.5,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            Parent = BottomBar,
+            ZIndex = 6,
+        })
+
+        local function UpdateSizeLabel()
+            if MainFrame and SizeLabel then
+                local s = MainFrame.AbsoluteSize
+                SizeLabel.Text = string.format("%d × %d", math.floor(s.X), math.floor(s.Y))
+            end
+        end
+        UpdateSizeLabel()
+        Library:GiveSignal(MainFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateSizeLabel))
+
+        -- Resize Button (corner)
         if WindowInfo.Resizable then
             ResizeButton = New("TextButton", {
-                AnchorPoint = Vector2.new(1, 0),
+                AnchorPoint = Vector2.new(1, 0.5),
                 BackgroundTransparency = 1,
-                Position = UDim2.new(1, -WindowInfo.CornerRadius / 4, 0, 0),
-                Size = UDim2.fromScale(1, 1),
-                SizeConstraint = Enum.SizeConstraint.RelativeYY,
+                Position = UDim2.new(1, -4, 0.5, 0),
+                Size = UDim2.fromOffset(18, 18),
                 Text = "",
                 Parent = BottomBar,
+                ZIndex = 7,
             })
 
             Library:MakeResizable(MainFrame, ResizeButton, function()
                 for _, Tab in Library.Tabs do
                     Tab:Resize(true)
                 end
+                UpdateSizeLabel()
             end)
         end
 
         local WindowResizeIcon = New("ImageLabel", {
             ImageColor3 = "FontColor",
-            ImageTransparency = 0.5,
-            Position = UDim2.fromOffset(2, 2),
-            Size = UDim2.new(1, -4, 1, -4),
+            ImageTransparency = 0.4,
+            Size = UDim2.fromScale(1, 1),
             Parent = ResizeButton,
+            ZIndex = 8,
         })
         if ResizeIcon then
             Library:ApplyLucideIcon(WindowResizeIcon, ResizeIcon)
@@ -11146,8 +11449,12 @@ function Library:CreateWindow(WindowInfo)
         Library.CornerRadius = Radius
         WindowInfo.CornerRadius = Radius
 
-        ResizeButton.Position = UDim2.new(1, -Radius / 4, 0, 0)
-        BottomBackground.Size = UDim2.new(1, 0, 0, 20 + Radius)
+        if ResizeButton then
+            ResizeButton.Position = UDim2.new(1, -4, 0.5, 0)
+        end
+        if BottomBackground then
+            BottomBackground.Size = UDim2.new(1, 0, 0, 22)
+        end
 
         for _, Menu in Library.ContextMenus do
             if Menu.Destroyed then
@@ -13682,8 +13989,8 @@ function Library:CreateWindow(WindowInfo)
         task.spawn(Library.Toggle)
     end
 
-    if Library.IsMobile then
-        -- Improved floating buttons (closer to WindUI style)
+    -- Floating open + lock buttons (always available, WindUI-inspired)
+    do
         local ToggleButton = Library:AddDraggableButton("Nexxware", function()
             Library:Toggle()
         end, true, true)
@@ -13696,13 +14003,11 @@ function Library:CreateWindow(WindowInfo)
         if WindowInfo.MobileButtonsSide == "Right" then
             ToggleButton.Button.AnchorPoint = Vector2.new(1, 0)
             ToggleButton.Button.Position = UDim2.new(1, -6, 0, 6)
-
             LockButton.Button.AnchorPoint = Vector2.new(1, 0)
             LockButton.Button.Position = UDim2.new(1, -(ToggleButton.Button.Size.X.Offset + 12), 0, 6)
         else
             ToggleButton.Button.AnchorPoint = Vector2.new(0, 0)
             ToggleButton.Button.Position = UDim2.fromOffset(6, 6)
-
             LockButton.Button.AnchorPoint = Vector2.new(0, 0)
             LockButton.Button.Position = UDim2.fromOffset(ToggleButton.Button.Size.X.Offset + 12, 6)
         end
