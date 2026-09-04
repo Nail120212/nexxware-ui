@@ -6404,41 +6404,57 @@ do
     end
 
     -- Nexxware: Tag component (WindUI-style)
-    function Funcs:AddTag(Text, Color)
+    -- WindUI-style solid pill Tag (supports Color + optional Icon)
+    function Funcs:AddTag(Text, Color, Icon)
         if self.Destroyed then return nil end
 
         local Groupbox = self
         local Container = Groupbox.Container
+        local TagColor = Color or Library.Scheme.AccentColor
 
         local TagFrame = New("Frame", {
-            BackgroundColor3 = Color or Library.Scheme.AccentColor,
-            BackgroundTransparency = 0.85,
-            Size = UDim2.new(0, 0, 0, 22),
+            BackgroundColor3 = TagColor,
+            BackgroundTransparency = 0, -- solid like WindUI
+            Size = UDim2.new(0, 0, 0, 24),
             AutomaticSize = Enum.AutomaticSize.X,
             Parent = Container,
         })
         New("UICorner", {
-            CornerRadius = UDim.new(0, 6),
+            CornerRadius = UDim.new(1, 0), -- full pill
             Parent = TagFrame,
         })
         New("UIPadding", {
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 8),
+            PaddingLeft = UDim.new(0, 10),
+            PaddingRight = UDim.new(0, 10),
             Parent = TagFrame,
         })
-        New("UIStroke", {
-            Color = Color or Library.Scheme.AccentColor,
-            Thickness = 1,
-            Transparency = 0.6,
+        New("UIListLayout", {
+            FillDirection = Enum.FillDirection.Horizontal,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            Padding = UDim.new(0, 5),
             Parent = TagFrame,
         })
 
+        if Icon then
+            local IconImage = New("ImageLabel", {
+                BackgroundTransparency = 1,
+                Size = UDim2.fromOffset(14, 14),
+                ImageColor3 = Color3.new(0, 0, 0),
+                Parent = TagFrame,
+            })
+            local lucide = Library:GetIcon(Icon)
+            if lucide then
+                Library:ApplyLucideIcon(IconImage, lucide)
+            end
+        end
+
         local TagLabel = New("TextLabel", {
             BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
+            Size = UDim2.fromOffset(0, 24),
+            AutomaticSize = Enum.AutomaticSize.X,
             Text = Text or "Tag",
-            TextSize = 12,
-            TextColor3 = Color or Library.Scheme.AccentColor,
+            TextSize = 13,
+            TextColor3 = Color3.new(0, 0, 0), -- dark text on solid pill
             FontFace = Library.Scheme.Font,
             Parent = TagFrame,
         })
