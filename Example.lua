@@ -1,6 +1,6 @@
 --[[ Nexxware Full Example ]]
 
-local Library = loadstring(game:HttpGet("YOUR_NEXXWARE_LIBRARY_URL_HERE"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nail120212/nexxware-ui/refs/heads/main/Library.lua"))()
 
 Library.ForceCheckbox = false
 Library.ShowToggleFrameInKeybinds = true
