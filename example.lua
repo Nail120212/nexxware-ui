@@ -1,4 +1,4 @@
-local Syde = loadstring(game:HttpGet("https://your-host.example/library.lua"))()
+local Syde = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nail120212/nexxware-ui/refs/heads/main/library.lua"))()
 
 local Window = Syde:Init({
     Title = "Solar UI",
