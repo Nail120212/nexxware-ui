@@ -7,6 +7,7 @@ local Window = Library:Window({
     Logo = "123748867365417",      -- asset id, rbxassetid://..., or a solar icon name
     Size = UDim2.new(0, 720, 0, 500),
     Scale = 1,                     -- start scale (0.6 - 1.5), changeable with the header scale button
+    Accent = Color3.fromRGB(88, 122, 255), -- optional: any color recolors the whole UI (also Library:SetAccent(color))
     OnClose = function() print("UI closed") end,
 })
 

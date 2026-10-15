@@ -213,8 +213,8 @@ local Library do
             ["Text"] = FromRGB(255, 255, 255),
             ["Element"] =  FromRGB(11, 11, 11),
             ["Image"] =  FromRGB(255, 255, 255),
-            ["Accent"] = FromRGB(181, 116, 16),
-            ["Light Accent"] = FromRGB(255, 156, 6),
+            ["Accent"] = FromRGB(88, 122, 255),
+            ["Light Accent"] = FromRGB(138, 166, 255),
             ["Border"] = FromRGB(24, 24, 24)
         }
     }
@@ -661,6 +661,46 @@ local Library do
         
         getgenv().Library = nil
         Library = nil 
+    end
+
+    -- adds a UIScale press animation (e.g. 0.96 = squish, 1.25 = grow) to any button
+    Library.AddPress = function(self, Item, Amount)
+        local Target = Item.Instance or Item
+
+        local PressScale = Instance.new("UIScale")
+        PressScale.Scale = 1
+        PressScale.Parent = Target
+
+        local Down = TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local Up = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+        local IsPress = function(Input)
+            return Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch
+        end
+
+        Library:Connect(Target.InputBegan, function(Input)
+            if IsPress(Input) then
+                TweenService:Create(PressScale, Down, {Scale = Amount or 0.96}):Play()
+            end
+        end)
+
+        Library:Connect(Target.InputEnded, function(Input)
+            if IsPress(Input) then
+                TweenService:Create(PressScale, Up, {Scale = 1}):Play()
+            end
+        end)
+
+        Library:Connect(Target.MouseLeave, function()
+            TweenService:Create(PressScale, Up, {Scale = 1}):Play()
+        end)
+
+        return PressScale
+    end
+
+    -- Library:SetAccent(Color3.fromRGB(...)) recolors the whole UI (light accent is derived)
+    Library.SetAccent = function(self, Color)
+        Library:ChangeTheme("Accent", Color)
+        Library:ChangeTheme("Light Accent", Color:Lerp(FromRGB(255, 255, 255), 0.3))
     end
 
     Library.Thread = function(self, Function)
@@ -1988,7 +2028,7 @@ local Library do
 
         local Palette = {
             default = {Color = FromRGB(24, 24, 24), Theme = "Border"},
-            primary = {Color = FromRGB(181, 116, 16), Theme = "Accent"},
+            primary = {Color = FromRGB(88, 122, 255), Theme = "Accent"},
             danger = {Color = FromRGB(201, 62, 62)},
         }
 
@@ -2027,6 +2067,8 @@ local Library do
                 CornerRadius = UDimNew(0, 6)
             }) 
 
+            Library:AddPress(Button, 0.95)
+
             Button:OnHover(function()
                 Button:Tween(Quick, {BackgroundTransparency = 0.2})
             end)
@@ -2062,6 +2104,10 @@ local Library do
 
     Library.Window = function(self, Data)
         Data = Data or { }
+
+        if Data.Accent or Data.accent then
+            Library:SetAccent(Data.Accent or Data.accent)
+        end
 
         -- the window is clamped to the screen so it can never spawn (or be resized) out of view
         local View = Library:GetViewSize()
@@ -2360,7 +2406,7 @@ local Library do
                 Window:SetScalePopover(false)
             end
 
-            ZoomTo(Bool and Window.Scale or Window.Scale * 0.92, TweenInfo.new(Window.FadeSpeed + 0.1, Enum.EasingStyle.Quint, Enum.EasingDirection.Out))
+            ZoomTo(Bool and Window.Scale or Window.Scale * 0.92, Bool and TweenInfo.new(Window.FadeSpeed + 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out) or TweenInfo.new(Window.FadeSpeed + 0.05, Enum.EasingStyle.Quint, Enum.EasingDirection.In))
 
             local Descendants = Items["MainFrame"].Instance:GetDescendants()
             TableInsert(Descendants, Items["MainFrame"].Instance)
@@ -2479,6 +2525,8 @@ local Library do
                 }) 
 
                 Draw(Button)
+
+                Library:AddPress(Button, 0.86)
 
                 Button:OnHover(function()
                     Button:Tween(nil, {BackgroundTransparency = HoverColor and 0.2 or 0.3})
@@ -2651,6 +2699,8 @@ local Library do
                     ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 }):AddToTheme({Color = "Border"})
 
+                Library:AddPress(Button, 0.92)
+
                 Button:OnHover(function()
                     Button:Tween(nil, {BackgroundColor3 = Library.Theme.Border})
                 end)
@@ -2820,7 +2870,7 @@ local Library do
 
         Items["FloatStroke"] = Instances:Create("UIStroke", {
             Parent = Items["Float"].Instance,
-            Color = FromRGB(255, 156, 6),
+            Color = FromRGB(138, 166, 255),
             Thickness = 1.5,
             Transparency = 1,
             ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -2828,7 +2878,7 @@ local Library do
 
         Items["FloatGlow"] = Instances:Create("ImageLabel", {
             Parent = Items["Float"].Instance,
-            ImageColor3 = FromRGB(181, 116, 16),
+            ImageColor3 = FromRGB(88, 122, 255),
             ImageTransparency = 1,
             AnchorPoint = Vector2New(0.5, 0.5),
             Image = "rbxassetid://112971167999062",
@@ -3157,7 +3207,7 @@ local Library do
 
             Items["UIStroke"] = Instances:Create("UIStroke", {
                 Parent = Items["Inactive"].Instance,
-                Color = FromRGB(255, 156, 6),
+                Color = FromRGB(138, 166, 255),
                 Transparency = 1,
                 ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             })  Items["UIStroke"]:AddToTheme({Color = "Border"})
@@ -3171,7 +3221,7 @@ local Library do
                 Size = UDim2New(0, 3, 0, 0),
                 ZIndex = 4,
                 BorderSizePixel = 0,
-                BackgroundColor3 = FromRGB(255, 156, 6)
+                BackgroundColor3 = FromRGB(138, 166, 255)
             })  Items["Indicator"]:AddToTheme({BackgroundColor3 = "Light Accent"})
 
             Instances:Create("UICorner", {
@@ -3197,6 +3247,11 @@ local Library do
 
             Library:ApplyIcon(Items["Icon"], Page.Icon, "rbxassetid://109391165290124")
 
+            Items["IconScale"] = Instances:Create("UIScale", {
+                Parent = Items["Icon"].Instance,
+                Scale = 1
+            }) 
+
             Items["Label"] = Instances:Create("TextLabel", {
                 Parent = Items["Inactive"].Instance,
                 FontFace = Library.Font,
@@ -3221,14 +3276,20 @@ local Library do
                 Parent = Page.Window.Items["Inline"].Instance,
                 Name = "\0",
                 BackgroundTransparency = 1,
+                AnchorPoint = Vector2New(0.5, 0.5),
                 Size = UDim2New(1, 0, 1, 0),
-                Position = UDim2New(0, 0, 0, 0),
+                Position = UDim2New(0.5, 0, 0.5, 0),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ZIndex = 2,
                 BorderSizePixel = 0,
                 Visible = false,
                 GroupTransparency = 1,
                 BackgroundColor3 = FromRGB(255, 255, 255)
+            }) 
+
+            Items["PageScale"] = Instances:Create("UIScale", {
+                Parent = Items["PageContent"].Instance,
+                Scale = 1
             }) 
 
             -- sub tab bar (scrolls horizontally if the tabs ever outgrow the window)
@@ -3311,6 +3372,11 @@ local Library do
                 Items["Icon"]:Tween(TabInfo, {ImageColor3 = Library.Theme["Light Accent"], ImageTransparency = 0})
                 Items["Label"]:Tween(TabInfo, {TextTransparency = 0, Position = UDim2New(0, 48, 0, 0)})
                 Items["Indicator"]:Tween(TabInfo, {Size = UDim2New(0, 3, 0, 20)})
+
+                if not Instant then
+                    Items["IconScale"].Instance.Scale = 0.7
+                    Items["IconScale"]:Tween(TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1})
+                end
                 Items["UIStroke"]:Tween(TabInfo, {Color = Library.Theme["Light Accent"], Transparency = 0.75})
             else
                 Items["Inactive"]:ChangeItemTheme({BackgroundColor3 = "Border"})
@@ -3335,18 +3401,21 @@ local Library do
             if Instant then
                 Content.Instance.Visible = Bool
                 Content.Instance.GroupTransparency = Bool and 0 or 1
-                Content.Instance.Position = UDim2New(0, 0, 0, 0)
+                Content.Instance.Position = UDim2New(0.5, 0, 0.5, 0)
+                Items["PageScale"].Instance.Scale = 1
                 return
             end
 
             if Bool then 
                 if not Content.Instance.Visible or Content.Instance.GroupTransparency >= 0.99 then
-                    Content.Instance.Position = UDim2New(0, 0, 0, 12)
+                    Content.Instance.Position = UDim2New(0.5, 0, 0.5, 14)
+                    Items["PageScale"].Instance.Scale = 0.97
                 end
 
                 Content.Instance.Visible = true
 
-                ContentTween = Content:Tween(TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.08), {GroupTransparency = 0, Position = UDim2New(0, 0, 0, 0)})
+                ContentTween = Content:Tween(TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.08), {GroupTransparency = 0, Position = UDim2New(0.5, 0, 0.5, 0)})
+                Items["PageScale"]:Tween(TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.08), {Scale = 1})
             else
                 local HideTween = Content:Tween(TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {GroupTransparency = 1})
                 ContentTween = HideTween
@@ -3358,6 +3427,8 @@ local Library do
                 end)
             end
         end
+
+        Library:AddPress(Items["Inactive"], 0.97)
 
         Items["Inactive"]:Connect("MouseButton1Down", function()
             for Index, Value in Page.Window.Pages do
@@ -3429,7 +3500,7 @@ local Library do
                 BackgroundTransparency = 1,
                 ZIndex = 3,
                 TextSize = 14,
-                BackgroundColor3 = FromRGB(181, 116, 16)
+                BackgroundColor3 = FromRGB(88, 122, 255)
             })  Items["Inactive"]:AddToTheme({TextColor3 = "Text", BackgroundColor3 = "Accent"})
 
             Instances:Create("UIPadding", {
@@ -3445,7 +3516,7 @@ local Library do
 
             Items["UIStroke"] = Instances:Create("UIStroke", {
                 Parent = Items["Inactive"].Instance,
-                Color = FromRGB(255, 156, 6),
+                Color = FromRGB(138, 166, 255),
                 Transparency = 1,
                 ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             })  Items["UIStroke"]:AddToTheme({Color = "Light Accent"})
@@ -3459,7 +3530,7 @@ local Library do
                 Size = UDim2New(0, 0, 0, 2),
                 ZIndex = 4,
                 BorderSizePixel = 0,
-                BackgroundColor3 = FromRGB(255, 156, 6)
+                BackgroundColor3 = FromRGB(138, 166, 255)
             })  Items["Bar"]:AddToTheme({BackgroundColor3 = "Light Accent"})
 
             Instances:Create("UICorner", {
@@ -3471,14 +3542,20 @@ local Library do
                 Parent = SubPage.Page.Items["Columns"].Instance,
                 Name = "\0",
                 BackgroundTransparency = 1,
+                AnchorPoint = Vector2New(0.5, 0.5),
                 Size = UDim2New(1, 0, 1, 0),
-                Position = UDim2New(0, 0, 0, 0),
+                Position = UDim2New(0.5, 0, 0.5, 0),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ZIndex = 2,
                 BorderSizePixel = 0,
                 Visible = false,
                 GroupTransparency = 1,
                 BackgroundColor3 = FromRGB(255, 255, 255)
+            }) 
+
+            Items["PageScale"] = Instances:Create("UIScale", {
+                Parent = Items["PageContent"].Instance,
+                Scale = 1
             }) 
 
             Items["Right"] = Instances:Create("ScrollingFrame", {
@@ -3489,7 +3566,7 @@ local Library do
                 ZIndex = 2,
                 BorderSizePixel = 0,
                 CanvasSize = UDim2New(0, 0, 0, 0),
-                ScrollBarImageColor3 = FromRGB(181, 116, 16),
+                ScrollBarImageColor3 = FromRGB(88, 122, 255),
                 MidImage = Library:GetImage("Scrollbar"),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ScrollBarThickness = 2,
@@ -3523,7 +3600,7 @@ local Library do
                 ZIndex = 2,
                 BorderSizePixel = 0,
                 CanvasSize = UDim2New(0, 0, 0, 0),
-                ScrollBarImageColor3 = FromRGB(181, 116, 16),
+                ScrollBarImageColor3 = FromRGB(88, 122, 255),
                 MidImage = Library:GetImage("Scrollbar"),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ScrollBarThickness = 2,
@@ -3586,18 +3663,21 @@ local Library do
             if Instant then
                 Content.Instance.Visible = Bool
                 Content.Instance.GroupTransparency = Bool and 0 or 1
-                Content.Instance.Position = UDim2New(0, 0, 0, 0)
+                Content.Instance.Position = UDim2New(0.5, 0, 0.5, 0)
+                Items["PageScale"].Instance.Scale = 1
                 return
             end
 
             if Bool then 
                 if not Content.Instance.Visible or Content.Instance.GroupTransparency >= 0.99 then
-                    Content.Instance.Position = UDim2New(0, 0, 0, 10)
+                    Content.Instance.Position = UDim2New(0.5, 0, 0.5, 12)
+                    Items["PageScale"].Instance.Scale = 0.975
                 end
 
                 Content.Instance.Visible = true
 
-                ContentTween = Content:Tween(TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.06), {GroupTransparency = 0, Position = UDim2New(0, 0, 0, 0)})
+                ContentTween = Content:Tween(TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.06), {GroupTransparency = 0, Position = UDim2New(0.5, 0, 0.5, 0)})
+                Items["PageScale"]:Tween(TweenInfo.new(0.36, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0, false, 0.06), {Scale = 1})
             else
                 local HideTween = Content:Tween(TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {GroupTransparency = 1})
                 ContentTween = HideTween
@@ -3611,6 +3691,8 @@ local Library do
         end
 
         -- every page owns its sub tabs (they used to share one window-wide list and switched each other off)
+        Library:AddPress(Items["Inactive"], 0.95)
+
         Items["Inactive"]:Connect("MouseButton1Down", function()
             for Index, Value in SubPage.Page.SubPages do
                 Value:Turn(Value == SubPage)
@@ -3823,10 +3905,13 @@ end
             Count = 0
         }
 
-        -- switch geometry: 34x18 track, 12px knob, 3px padding
-        local TrackWidth, TrackHeight = 34, 18
-        local KnobSize, KnobPadding = 12, 3
-        local Slide = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+        -- switch geometry: 36x20 track, 14px knob, 3px padding (matches the 14px label and the 20px row)
+        local TrackWidth, TrackHeight = 36, 20
+        local KnobSize, KnobPadding = 14, 3
+        local Slide = TweenInfo.new(0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+        local KnobMove = TweenInfo.new(0.26, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+        local KnobStretch = TweenInfo.new(0.13, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+        local KnobToken = 0
 
         local Items = { } do
             Items["Toggle"] = Instances:Create("TextButton", {
@@ -3903,8 +3988,8 @@ end
                 BackgroundTransparency = 1,
                 Position = UDim2New(0.5, 0, 0.5, 0),
                 SliceScale = 0.6000000238418579,
-                ImageColor3 = FromRGB(181, 116, 16),
-                Size = UDim2New(1, 15, 1, 15),
+                ImageColor3 = FromRGB(88, 122, 255),
+                Size = UDim2New(1, 12, 1, 12),
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Shadow"]:AddToTheme({ImageColor3 = "Accent"})
 
@@ -3925,6 +4010,25 @@ end
                 TextSize = 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
+        end
+
+        -- the knob glides across while squashing wider/shorter mid-way, then settles back to a circle
+        local MoveKnob = function(Value)
+            KnobToken += 1
+            local Current = KnobToken
+
+            Items["Knob"]:Tween(KnobMove, {
+                Position = UDim2New(0, Value and (TrackWidth - KnobSize - KnobPadding) or KnobPadding, 0.5, 0),
+                BackgroundTransparency = Value and 0 or 0.45
+            })
+
+            local Stretch = Items["Knob"]:Tween(KnobStretch, {Size = UDim2New(0, KnobSize + 5, 0, KnobSize - 2)})
+
+            Stretch.Tween.Completed:Once(function()
+                if Current == KnobToken then
+                    Items["Knob"]:Tween(KnobStretch, {Size = UDim2New(0, KnobSize, 0, KnobSize)})
+                end
+            end)
         end
 
         function Toggle:Get()
@@ -3948,8 +4052,8 @@ end
 
                 Items["Indicator"]:Tween(Slide, {BackgroundColor3 = Library.Theme.Accent})
                 Items["UIStroke"]:Tween(Slide, {Color = Library.Theme["Light Accent"]})
-                Items["Knob"]:Tween(Slide, {Position = UDim2New(0, TrackWidth - KnobSize - KnobPadding, 0.5, 0), BackgroundTransparency = 0})
-                Items["Shadow"]:Tween(Slide, {ImageTransparency = 0.55})
+                MoveKnob(true)
+                Items["Shadow"]:Tween(Slide, {ImageTransparency = 0.68})
                 Items["Text"]:Tween(Slide, {TextTransparency = 0})
             else
                 Items["Indicator"]:ChangeItemTheme({BackgroundColor3 = "Element"})
@@ -3957,7 +4061,7 @@ end
 
                 Items["Indicator"]:Tween(Slide, {BackgroundColor3 = Library.Theme.Element})
                 Items["UIStroke"]:Tween(Slide, {Color = Library.Theme.Border})
-                Items["Knob"]:Tween(Slide, {Position = UDim2New(0, KnobPadding, 0.5, 0), BackgroundTransparency = 0.45})
+                MoveKnob(false)
                 Items["Shadow"]:Tween(Slide, {ImageTransparency = 1})
                 Items["Text"]:Tween(Slide, {TextTransparency = 0.5})
             end
@@ -4368,6 +4472,8 @@ end
             })  Items["UIStroke"]:AddToTheme({Color = "Border"})
         end
 
+        Library:AddPress(Items["Button"], 0.98)
+
         function Button:Press()
             Items["Button"]:ChangeItemTheme({BackgroundColor3 = "Accent"})
             Items["UIStroke"]:ChangeItemTheme({Color = "Light Accent"})
@@ -4563,7 +4669,7 @@ end
             BorderColor3 = FromRGB(0, 0, 0),
             ZIndex = 5,
             BorderSizePixel = 0,
-            BackgroundColor3 = FromRGB(181, 116, 16)
+            BackgroundColor3 = FromRGB(88, 122, 255)
         })  Items["Accent"]:AddToTheme({BackgroundColor3 = "Accent"})
 
         Items["Drag"] = Instances:Create("TextButton", {
@@ -4580,7 +4686,7 @@ end
             Size = UDim2New(0, 15, 0, 15),
             ZIndex = 5,
             TextSize = 14,
-            BackgroundColor3 = FromRGB(181, 116, 16)
+            BackgroundColor3 = FromRGB(88, 122, 255)
         })  Items["Drag"]:AddToTheme({BackgroundColor3 = "Accent"})
 
         Instances:Create("UICorner", {
@@ -4588,6 +4694,8 @@ end
             CornerRadius = UDimNew(1, 0)
         }) 
     end
+
+    Library:AddPress(Items["Drag"], 1.25)
 
     function Slider:Get()
         return Slider.Value
@@ -4752,7 +4860,7 @@ end
                 ZIndex = 25,
                 BorderSizePixel = 0,
                 CanvasSize = UDim2New(0, 0, 0, 0),
-                ScrollBarImageColor3 = FromRGB(181, 116, 16),
+                ScrollBarImageColor3 = FromRGB(88, 122, 255),
                 MidImage = Library:GetImage("Scrollbar"),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ScrollBarThickness = 2,
@@ -5514,7 +5622,7 @@ end
 
         local Styles = {
             default = {Color = FromRGB(24, 24, 24), Theme = "Border"},
-            primary = {Color = FromRGB(181, 116, 16), Theme = "Accent"},
+            primary = {Color = FromRGB(88, 122, 255), Theme = "Accent"},
             danger = {Color = FromRGB(201, 62, 62)},
         }
 
@@ -5558,6 +5666,8 @@ end
                 Parent = Button.Instance,
                 CornerRadius = UDimNew(0, 6)
             }) 
+
+            Library:AddPress(Button, 0.95)
 
             Button:OnHover(function()
                 Button:Tween(Quick, {BackgroundTransparency = 0.25})
