@@ -2,8 +2,8 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nail120212/nexxware-ui/refs/heads/main/Source.lua"))()
 
 local Window = Library:Window({
-    Title = "Caesar",              -- next to the logo
-    Subtitle = "v1.0 | Premium",   -- small text under the title
+    Title = "Dash Hub",              -- next to the logo
+    Subtitle = "vbl",   -- small text under the title
     Logo = "123748867365417",      -- asset id, rbxassetid://..., or a solar icon name
     Size = UDim2.new(0, 720, 0, 500),
     Scale = 1,                     -- start scale (0.6 - 1.5), changeable with the header scale button
