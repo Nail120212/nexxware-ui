@@ -2,14 +2,24 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nail120212/nexxware-ui/refs/heads/main/Source.lua"))()
 
 local Window = Library:Window({
-    Title = "Dash Hub",              -- next to the logo
-    Subtitle = "vbl",   -- small text under the title
+    Title = "Caesar",              -- next to the logo
+    Subtitle = "v1.0 | Premium",   -- small text under the title
     Logo = "123748867365417",      -- asset id, rbxassetid://..., or a solar icon name
     Size = UDim2.new(0, 720, 0, 500),
     Scale = 1,                     -- start scale (0.6 - 1.5), changeable with the header scale button
-    Accent = Color3.fromRGB(88, 122, 255), -- optional: any color recolors the whole UI (also Library:SetAccent(color))
+    Accent = Color3.fromRGB(100, 100, 108), -- default neutral gray; any color recolors the whole UI (also Library:SetAccent(color))
     OnClose = function() print("UI closed") end,
 })
+
+-- Tags next to the title: text, icon, color, radius are all optional/customizable
+local Beta = Window:Tag({ Text = "BETA", Icon = "star", Color = Color3.fromRGB(200, 200, 210) })
+Window:Tag({ Text = "VIP", Color = Color3.fromRGB(255, 190, 60), Radius = 0.2 }) -- Radius: 0.2 = scale (default), or pixels like 4
+-- Beta:SetText("NEW")  Beta:SetColor(Color3.fromRGB(255, 80, 80))  Beta:SetIcon("bolt")  Beta:SetRadius(3)
+
+-- Player box (bottom of the sidebar) is automatic: avatar + display name + @username.
+-- Override it with  PlayerBox = { Name = "Nail", Username = "nail", Avatar = "rbxassetid://...", Status = Color3.fromRGB(255, 180, 0) }
+-- or turn it off with PlayerBox = false in Library:Window{}.
+-- Config manager = the folder button in the header (create / load / save / delete / export / import / autoload).
 
 -- Icons: just the Solar name ("home", "bolt", "eye", "settings" ...). Style defaults to bold;
 -- change it with Library.IconStyle = "linear" | "outline" | "bold-duotone" before creating pages.
@@ -108,3 +118,6 @@ SettingsMain:Section({ Name = "Menu", Side = "Left" }):Label("Press Z to toggle 
 
 -- Header buttons: [scale] [minimize -> floating button] [close -> confirm dialog]
 -- Window:SetScale(1.1)   Window:SetMinimized(true)   Window:Close()   Window:SetTitle("New", "Subtitle")
+
+-- Loads the config you marked "Autoload" in the config manager. Call it after the whole UI is built.
+Library:LoadAutoConfig()

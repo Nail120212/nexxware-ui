@@ -213,8 +213,8 @@ local Library do
             ["Text"] = FromRGB(255, 255, 255),
             ["Element"] =  FromRGB(11, 11, 11),
             ["Image"] =  FromRGB(255, 255, 255),
-            ["Accent"] = FromRGB(88, 122, 255),
-            ["Light Accent"] = FromRGB(138, 166, 255),
+            ["Accent"] = FromRGB(100, 100, 108),
+            ["Light Accent"] = FromRGB(182, 182, 192),
             ["Border"] = FromRGB(24, 24, 24)
         }
     }
@@ -703,6 +703,42 @@ local Library do
         Library:ChangeTheme("Light Accent", Color:Lerp(FromRGB(255, 255, 255), 0.3))
     end
 
+    -- call this after your UI is built: loads the config marked "Autoload" in the config manager
+    Library.LoadAutoConfig = function(self)
+        local Path = Library.Folders.Directory .. "/autoload.txt"
+
+        local Success, Name = pcall(function()
+            if isfile(Path) then
+                return readfile(Path)
+            end
+        end)
+
+        if not Success or type(Name) ~= "string" then
+            return false
+        end
+
+        Name = string.match(Name, "^%s*(.-)%s*$")
+
+        if Name == "" then
+            return false
+        end
+
+        local ConfigFile = Library.Folders.Configs .. "/" .. Name .. ".json"
+
+        local Loaded, Content = pcall(function()
+            if isfile(ConfigFile) then
+                return readfile(ConfigFile)
+            end
+        end)
+
+        if Loaded and type(Content) == "string" and pcall(Library.LoadConfig, Library, Content) then
+            Library:Notification("Config", "Autoloaded " .. Name, 4)
+            return true
+        end
+
+        return false
+    end
+
     Library.Thread = function(self, Function)
         local NewThread = coroutine.create(Function)
         
@@ -929,7 +965,7 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["Notification"].Instance,
-                CornerRadius = UDimNew(0, 4)
+                CornerRadius = UDimNew(0, 6)
             }) 
 
             Items["Title"] = Instances:Create("TextLabel", {
@@ -1104,7 +1140,7 @@ local Library do
                 ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             })
 
-            Corner(Parent, UDimNew(1, 0))
+            Corner(Parent, UDimNew(0.2, 0))
         end
 
         local Items = { } do
@@ -1125,7 +1161,7 @@ local Library do
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
 
-            Corner(Items["ColorpickerButton"], UDimNew(0, 3))
+            Corner(Items["ColorpickerButton"], UDimNew(0.2, 0))
             Stroke(Items["ColorpickerButton"])
 
             -- fixed slot math (independent of AbsoluteSize, which is 0 before the first layout pass)
@@ -1265,7 +1301,7 @@ local Library do
                 Color = RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 0, 0)), RGBSequenceKeypoint(0.17, FromRGB(255, 255, 0)), RGBSequenceKeypoint(0.33, FromRGB(0, 255, 0)), RGBSequenceKeypoint(0.5, FromRGB(0, 255, 255)), RGBSequenceKeypoint(0.67, FromRGB(0, 0, 255)), RGBSequenceKeypoint(0.83, FromRGB(255, 0, 255)), RGBSequenceKeypoint(1, FromRGB(255, 0, 0))}
             }) 
 
-            Corner(Items["Hue"], UDimNew(0, 6))
+            Corner(Items["Hue"], UDimNew(0.2, 0))
             Stroke(Items["Hue"])
 
             Items["HueDragger"] = Instances:Create("Frame", {
@@ -1300,7 +1336,7 @@ local Library do
                 BackgroundColor3 = FromRGB(255, 0, 0)
             }) 
 
-            Corner(Items["Alpha"], UDimNew(0, 6))
+            Corner(Items["Alpha"], UDimNew(0.2, 0))
             Stroke(Items["Alpha"])
 
             Items["Checkers"] = Instances:Create("ImageLabel", {
@@ -1321,7 +1357,7 @@ local Library do
                 Transparency = NumSequence{NumSequenceKeypoint(0, 1), NumSequenceKeypoint(1, 0)}
             }) 
 
-            Corner(Items["Checkers"], UDimNew(0, 6))
+            Corner(Items["Checkers"], UDimNew(0.2, 0))
 
             Items["AlphaDragger"] = Instances:Create("Frame", {
                 Parent = Items["Alpha"].Instance,
@@ -1350,7 +1386,7 @@ local Library do
                 BackgroundColor3 = FromRGB(255, 255, 255)
             }) 
 
-            Corner(Items["Swatch"], UDimNew(0, 5))
+            Corner(Items["Swatch"], UDimNew(0.2, 0))
             Stroke(Items["Swatch"])
 
             Items["HexBox"] = Instances:Create("TextBox", {
@@ -1372,7 +1408,7 @@ local Library do
                 BackgroundColor3 = FromRGB(11, 11, 11)
             })  Items["HexBox"]:AddToTheme({TextColor3 = "Text", BackgroundColor3 = "Element"})
 
-            Corner(Items["HexBox"], UDimNew(0, 5))
+            Corner(Items["HexBox"], UDimNew(0.2, 0))
             Items["HexStroke"] = Stroke(Items["HexBox"])
 
             -- rainbow toggle
@@ -1423,7 +1459,7 @@ local Library do
             })  Items["Indicator"]:AddToTheme({BackgroundColor3 = "Element"})
 
             Items["UIStroke"] = Stroke(Items["Indicator"])
-            Corner(Items["Indicator"], UDimNew(0, 3))
+            Corner(Items["Indicator"], UDimNew(0.2, 0))
 
             Items["Check"] = Instances:Create("ImageLabel", {
                 Parent = Items["Indicator"].Instance,
@@ -1893,7 +1929,7 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["Overlay"].Instance,
-                CornerRadius = UDimNew(0, 5)
+                CornerRadius = UDimNew(0, 6)
             }) 
 
             Items["Card"] = Instances:Create("CanvasGroup", {
@@ -1917,7 +1953,7 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["Card"].Instance,
-                CornerRadius = UDimNew(0, 8)
+                CornerRadius = UDimNew(0, 6)
             }) 
 
             Instances:Create("UIStroke", {
@@ -2028,7 +2064,7 @@ local Library do
 
         local Palette = {
             default = {Color = FromRGB(24, 24, 24), Theme = "Border"},
-            primary = {Color = FromRGB(88, 122, 255), Theme = "Accent"},
+            primary = {Color = FromRGB(100, 100, 108), Theme = "Accent"},
             danger = {Color = FromRGB(201, 62, 62)},
         }
 
@@ -2064,7 +2100,7 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Button.Instance,
-                CornerRadius = UDimNew(0, 6)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Library:AddPress(Button, 0.95)
@@ -2102,6 +2138,172 @@ local Library do
         return Dialog
     end
 
+    -- Window:Tag({Text = "BETA", Icon = "star", Color = Color3.fromRGB(200, 200, 210), TextColor = nil, Radius = 0.2})
+    -- A small pill next to the window title. Icon = solar name / asset id (optional), Radius: 0.2 (default) = scale like every other corner, or a pixel number > 1 (e.g. 8).
+    Library.Tag = function(self, Data)
+        Data = Data or { }
+
+        local Tag = {
+            Window = self,
+
+            Text = tostring(Data.Text or Data.text or "TAG"),
+            Icon = Data.Icon or Data.icon,
+            Color = Data.Color or Data.color or Library.Theme.Accent,
+            TextColor = Data.TextColor or Data.textcolor,
+            Radius = Data.Radius or Data.radius or 0.2,
+        }
+
+        self.TagCount = (self.TagCount or 0) + 1
+
+        -- 0 < r <= 1 = scale corner, r > 1 = pixels
+        local RadiusOf = function(Value)
+            if type(Value) ~= "number" then
+                return UDimNew(0.2, 0)
+            end
+
+            if Value > 0 and Value <= 1 then
+                return UDimNew(Value, 0)
+            end
+
+            return UDimNew(0, Value)
+        end
+
+        local Items = { } do
+            Items["Tag"] = Instances:Create("Frame", {
+                Parent = self.Items["Tags"].Instance,
+                Name = "\0",
+                AutomaticSize = Enum.AutomaticSize.X,
+                Size = UDim2New(0, 0, 0, 16),
+                BackgroundColor3 = Tag.Color,
+                BackgroundTransparency = 0.82,
+                BorderSizePixel = 0,
+                BorderColor3 = FromRGB(0, 0, 0),
+                LayoutOrder = self.TagCount,
+                ZIndex = 4
+            }) 
+
+            Items["Corner"] = Instances:Create("UICorner", {
+                Parent = Items["Tag"].Instance,
+                CornerRadius = RadiusOf(Tag.Radius)
+            }) 
+
+            Items["Stroke"] = Instances:Create("UIStroke", {
+                Parent = Items["Tag"].Instance,
+                Color = Tag.Color,
+                Transparency = 0.55,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            }) 
+
+            Items["Scale"] = Instances:Create("UIScale", {
+                Parent = Items["Tag"].Instance,
+                Scale = 0.6
+            }) 
+
+            Instances:Create("UIPadding", {
+                Parent = Items["Tag"].Instance,
+                PaddingLeft = UDimNew(0, 6),
+                PaddingRight = UDimNew(0, 6)
+            }) 
+
+            Instances:Create("UIListLayout", {
+                Parent = Items["Tag"].Instance,
+                Padding = UDimNew(0, 3),
+                FillDirection = Enum.FillDirection.Horizontal,
+                HorizontalAlignment = Enum.HorizontalAlignment.Left,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                SortOrder = Enum.SortOrder.LayoutOrder
+            }) 
+
+            Items["Icon"] = Instances:Create("ImageLabel", {
+                Parent = Items["Tag"].Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                Size = UDim2New(0, 10, 0, 10),
+                ScaleType = Enum.ScaleType.Fit,
+                ImageColor3 = Tag.TextColor or Tag.Color,
+                Visible = Tag.Icon ~= nil and Tag.Icon ~= "",
+                LayoutOrder = 1,
+                ZIndex = 5
+            }) 
+
+            Items["Label"] = Instances:Create("TextLabel", {
+                Parent = Items["Tag"].Instance,
+                FontFace = Library.BoldFont,
+                Text = Tag.Text,
+                TextColor3 = Tag.TextColor or Tag.Color,
+                TextSize = 10,
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                Name = "\0",
+                AutomaticSize = Enum.AutomaticSize.X,
+                Size = UDim2New(0, 0, 1, 0),
+                LayoutOrder = 2,
+                ZIndex = 5
+            }) 
+        end
+
+        if Tag.Icon and Tag.Icon ~= "" then
+            Library:ApplyIcon(Items["Icon"], Tag.Icon)
+        end
+
+        local Apply = function()
+            local TextColor = Tag.TextColor or Tag.Color
+
+            Items["Tag"].Instance.BackgroundColor3 = Tag.Color
+            Items["Stroke"].Instance.Color = Tag.Color
+            Items["Label"].Instance.TextColor3 = TextColor
+            Items["Icon"].Instance.ImageColor3 = TextColor
+            Items["Corner"].Instance.CornerRadius = RadiusOf(Tag.Radius)
+            Items["Label"].Instance.Text = Tag.Text
+            Items["Icon"].Instance.Visible = Tag.Icon ~= nil and Tag.Icon ~= ""
+        end
+
+        function Tag:SetText(Text)
+            Tag.Text = tostring(Text)
+            Apply()
+        end
+
+        function Tag:SetColor(Color)
+            Tag.Color = Color
+            Apply()
+        end
+
+        function Tag:SetTextColor(Color)
+            Tag.TextColor = Color
+            Apply()
+        end
+
+        function Tag:SetRadius(Radius)
+            Tag.Radius = Radius
+            Apply()
+        end
+
+        function Tag:SetIcon(Icon)
+            Tag.Icon = Icon
+
+            if Icon and Icon ~= "" then
+                Library:ApplyIcon(Items["Icon"], Icon)
+            end
+
+            Apply()
+        end
+
+        function Tag:SetVisibility(Bool)
+            Items["Tag"].Instance.Visible = Bool
+        end
+
+        function Tag:Destroy()
+            Items["Tag"]:Clean()
+        end
+
+        Items["Scale"]:Tween(TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1})
+
+        Tag.Items = Items
+
+        return Tag
+    end
+
     Library.Window = function(self, Data)
         Data = Data or { }
 
@@ -2132,6 +2334,8 @@ local Library do
             Minimizable = Data.Minimizable ~= false,
             Scalable = Data.Scalable ~= false,
             OnClose = Data.OnClose or Data.onclose,
+            ConfigManager = Data.ConfigManager ~= false and Data.configmanager ~= false,
+            HasPlayerBox = Data.PlayerBox ~= false and Data.playerbox ~= false,
             SidebarWidth = MathClamp(Data.SidebarWidth or Data.sidebarwidth or 176, 120, MathFloor(Width * 0.45)),
             HeaderHeight = 56,
 
@@ -2146,8 +2350,9 @@ local Library do
         local Header = Window.HeaderHeight
 
         -- header controls take space from the sub tab bar
-        local ControlCount = (Window.Scalable and 1 or 0) + (Window.Minimizable and 1 or 0) + (Window.Closable and 1 or 0)
+        local ControlCount = (Window.Scalable and 1 or 0) + (Window.Minimizable and 1 or 0) + (Window.Closable and 1 or 0) + (Window.ConfigManager and 1 or 0)
         Window.ControlsWidth = ControlCount > 0 and (ControlCount * 26 + (ControlCount - 1) * 4 + 12) or 0
+        Window.FooterHeight = Window.HasPlayerBox and 60 or 0
 
         local ScaleObject
 
@@ -2226,7 +2431,7 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["Logo"].Instance,
-                CornerRadius = UDimNew(0, 8)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Items["Shadow2"] = Instances:Create("ImageLabel", {
@@ -2247,23 +2452,64 @@ local Library do
                 SliceCenter = RectNew(Vector2New(112, 112), Vector2New(147, 147))
             })  Items["Shadow2"]:AddToTheme({ImageColor3 = "Image"})
 
-            Items["Title"] = Instances:Create("TextLabel", {
+            -- title row: [title] [tags...]
+            Items["TitleRow"] = Instances:Create("Frame", {
                 Parent = Items["Sidebar"].Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                ClipsDescendants = true,
+                Position = UDim2New(0, 54, 0, Window.Subtitle ~= "" and 10 or 18),
+                Size = UDim2New(1, -62, 0, 18),
+                ZIndex = 3,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            }) 
+
+            Instances:Create("UIListLayout", {
+                Parent = Items["TitleRow"].Instance,
+                Padding = UDimNew(0, 6),
+                FillDirection = Enum.FillDirection.Horizontal,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                SortOrder = Enum.SortOrder.LayoutOrder
+            }) 
+
+            Items["Title"] = Instances:Create("TextLabel", {
+                Parent = Items["TitleRow"].Instance,
                 FontFace = Library.BoldFont,
                 TextColor3 = FromRGB(255, 255, 255),
                 Text = Window.Title,
                 Name = "\0",
                 BorderColor3 = FromRGB(0, 0, 0),
-                Position = UDim2New(0, 54, 0, Window.Subtitle ~= "" and 11 or 19),
-                Size = UDim2New(1, -62, 0, 18),
+                AutomaticSize = Enum.AutomaticSize.X,
+                Size = UDim2New(0, 0, 1, 0),
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
-                TextTruncate = Enum.TextTruncate.AtEnd,
+                LayoutOrder = 1,
                 BorderSizePixel = 0,
                 ZIndex = 3,
                 TextSize = 15,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
+
+            Items["Tags"] = Instances:Create("Frame", {
+                Parent = Items["TitleRow"].Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                AutomaticSize = Enum.AutomaticSize.X,
+                Size = UDim2New(0, 0, 1, 0),
+                LayoutOrder = 2,
+                ZIndex = 3,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            }) 
+
+            Instances:Create("UIListLayout", {
+                Parent = Items["Tags"].Instance,
+                Padding = UDimNew(0, 4),
+                FillDirection = Enum.FillDirection.Horizontal,
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                SortOrder = Enum.SortOrder.LayoutOrder
+            }) 
 
             Items["Subtitle"] = Instances:Create("TextLabel", {
                 Parent = Items["Sidebar"].Instance,
@@ -2310,9 +2556,12 @@ local Library do
 
             Items["Pages"] = Instances:Create("ScrollingFrame", {
                 Parent = Items["Sidebar"].Instance,
+                Active = true,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                ScrollBarThickness = 2,
-                ScrollBarImageTransparency = 0,
+                ScrollBarThickness = 3,
+                ScrollBarImageTransparency = 0.2,
+                ScrollingDirection = Enum.ScrollingDirection.Y,
+                ElasticBehavior = Enum.ElasticBehavior.Never,
                 CanvasSize = UDim2New(0, 0, 0, 0),
                 ScrollBarImageColor3 = Library.Theme.Accent,
                 MidImage = Library:GetImage("Scrollbar"),
@@ -2322,7 +2571,7 @@ local Library do
                 Name = "\0",
                 BackgroundTransparency = 1,
                 Position = UDim2New(0, 0, 0, Header + 10),
-                Size = UDim2New(1, 0, 1, -(Header + 18)),
+                Size = UDim2New(1, 0, 1, -(Header + 18 + Window.FooterHeight)),
                 ZIndex = 2,
                 BorderSizePixel = 0,
                 BackgroundColor3 = FromRGB(255, 255, 255)
@@ -2335,9 +2584,114 @@ local Library do
                 SortOrder = Enum.SortOrder.LayoutOrder
             }) 
 
+            -- player box (bottom of the sidebar): avatar | display name / @username
+            if Window.HasPlayerBox then
+                Items["Footer"] = Instances:Create("Frame", {
+                    Parent = Items["Sidebar"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    AnchorPoint = Vector2New(0, 1),
+                    Position = UDim2New(0, 0, 1, 0),
+                    Size = UDim2New(1, 0, 0, Window.FooterHeight),
+                    ZIndex = 3,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                }) 
+
+                Instances:Create("Frame", {
+                    Parent = Items["Footer"].Instance,
+                    Size = UDim2New(1, 0, 0, 1),
+                    Name = "\0",
+                    BorderSizePixel = 0,
+                    ZIndex = 3,
+                    BackgroundColor3 = FromRGB(24, 24, 24)
+                }):AddToTheme({BackgroundColor3 = "Border"})
+
+                Items["Avatar"] = Instances:Create("ImageLabel", {
+                    Parent = Items["Footer"].Instance,
+                    Name = "\0",
+                    AnchorPoint = Vector2New(0, 0.5),
+                    Position = UDim2New(0, 12, 0.5, 1),
+                    Size = UDim2New(0, 36, 0, 36),
+                    ScaleType = Enum.ScaleType.Crop,
+                    BorderSizePixel = 0,
+                    ZIndex = 4,
+                    BackgroundColor3 = FromRGB(11, 11, 11)
+                })  Items["Avatar"]:AddToTheme({BackgroundColor3 = "Element"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Avatar"].Instance,
+                    CornerRadius = UDimNew(0.2, 0)
+                }) 
+
+                Instances:Create("UIStroke", {
+                    Parent = Items["Avatar"].Instance,
+                    Color = FromRGB(182, 182, 192),
+                    Thickness = 1.5,
+                    Transparency = 0.45,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                }):AddToTheme({Color = "Light Accent"})
+
+                Items["StatusDot"] = Instances:Create("Frame", {
+                    Parent = Items["Avatar"].Instance,
+                    Name = "\0",
+                    AnchorPoint = Vector2New(1, 1),
+                    Position = UDim2New(1, 1, 1, 1),
+                    Size = UDim2New(0, 10, 0, 10),
+                    BorderSizePixel = 0,
+                    ZIndex = 6,
+                    BackgroundColor3 = FromRGB(67, 181, 129)
+                }) 
+
+                Instances:Create("UICorner", {
+                    Parent = Items["StatusDot"].Instance,
+                    CornerRadius = UDimNew(0.2, 0)
+                }) 
+
+                Instances:Create("UIStroke", {
+                    Parent = Items["StatusDot"].Instance,
+                    Color = FromRGB(14, 14, 14),
+                    Thickness = 2,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                }):AddToTheme({Color = "Background"})
+
+                Items["PlayerName"] = Instances:Create("TextLabel", {
+                    Parent = Items["Footer"].Instance,
+                    FontFace = Library.BoldFont,
+                    Text = "",
+                    TextColor3 = FromRGB(255, 255, 255),
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Name = "\0",
+                    Position = UDim2New(0, 58, 0.5, -15),
+                    Size = UDim2New(1, -66, 0, 16),
+                    ZIndex = 4
+                })  Items["PlayerName"]:AddToTheme({TextColor3 = "Text"})
+
+                Items["PlayerUser"] = Instances:Create("TextLabel", {
+                    Parent = Items["Footer"].Instance,
+                    FontFace = Library.Font,
+                    Text = "",
+                    TextColor3 = FromRGB(255, 255, 255),
+                    TextTransparency = 0.5,
+                    TextSize = 12,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Name = "\0",
+                    Position = UDim2New(0, 58, 0.5, 2),
+                    Size = UDim2New(1, -66, 0, 14),
+                    ZIndex = 4
+                })  Items["PlayerUser"]:AddToTheme({TextColor3 = "Text"})
+            end
+
             Instances:Create("UICorner", {
                 Parent = Items["MainFrame"].Instance,
-                CornerRadius = UDimNew(0, 5)
+                CornerRadius = UDimNew(0, 6)
             }) 
 
             Items["Inline"] = Instances:Create("Frame", {
@@ -2404,6 +2758,7 @@ local Library do
             else
                 Library:ClosePopups()
                 Window:SetScalePopover(false)
+                Window:SetConfigPanel(false)
             end
 
             ZoomTo(Bool and Window.Scale or Window.Scale * 0.92, Bool and TweenInfo.new(Window.FadeSpeed + 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out) or TweenInfo.new(Window.FadeSpeed + 0.05, Enum.EasingStyle.Quint, Enum.EasingDirection.In))
@@ -2453,7 +2808,7 @@ local Library do
                 Window.Subtitle = Subtitle
                 Items["Subtitle"].Instance.Text = Subtitle
                 Items["Subtitle"].Instance.Visible = Subtitle ~= ""
-                Items["Title"].Instance.Position = UDim2New(0, 54, 0, Subtitle ~= "" and 11 or 19)
+                Items["TitleRow"].Instance.Position = UDim2New(0, 54, 0, Subtitle ~= "" and 10 or 18)
             end
         end
 
@@ -2479,6 +2834,7 @@ local Library do
 
         -- header controls: [scale] [minimize] [close]
         local ScaleButton
+        local ConfigButton
 
         if Window.ControlsWidth > 0 then
             Items["Controls"] = Instances:Create("Frame", {
@@ -2521,7 +2877,7 @@ local Library do
 
                 Instances:Create("UICorner", {
                     Parent = Button.Instance,
-                    CornerRadius = UDimNew(0, 6)
+                    CornerRadius = UDimNew(0.2, 0)
                 }) 
 
                 Draw(Button)
@@ -2560,6 +2916,47 @@ local Library do
                 }) 
             end
 
+            if Window.ConfigManager then
+                -- folder glyph, left of the scale button
+                ConfigButton = CreateControl(0, nil, function(Button)
+                    local Folder = Instances:Create("Frame", {
+                        Parent = Button.Instance,
+                        AnchorPoint = Vector2New(0.5, 0.5),
+                        Position = UDim2New(0.5, 0, 0.5, 2),
+                        Size = UDim2New(0, 13, 0, 9),
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        Name = "\0",
+                        ZIndex = 61,
+                        BackgroundColor3 = FromRGB(255, 255, 255)
+                    }) 
+
+                    Instances:Create("UICorner", {
+                        Parent = Folder.Instance,
+                        CornerRadius = UDimNew(0.2, 0)
+                    }) 
+
+                    Instances:Create("UIStroke", {
+                        Parent = Folder.Instance,
+                        Color = FromRGB(255, 255, 255),
+                        Thickness = 1.5,
+                        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                    }):AddToTheme({Color = "Text"})
+
+                    local Tab = Instances:Create("Frame", {
+                        Parent = Button.Instance,
+                        AnchorPoint = Vector2New(0.5, 0.5),
+                        Position = UDim2New(0.5, -4, 0.5, -4),
+                        Size = UDim2New(0, 5, 0, 2),
+                        BorderSizePixel = 0,
+                        Name = "\0",
+                        ZIndex = 61,
+                        BackgroundTransparency = 0.1,
+                        BackgroundColor3 = FromRGB(255, 255, 255)
+                    })  Tab:AddToTheme({BackgroundColor3 = "Text"})
+                end)
+            end
+
             if Window.Scalable then
                 ScaleButton = CreateControl(1, nil, function(Button)
                     local Glyph = Instances:Create("Frame", {
@@ -2576,7 +2973,7 @@ local Library do
 
                     Instances:Create("UICorner", {
                         Parent = Glyph.Instance,
-                        CornerRadius = UDimNew(0, 2)
+                        CornerRadius = UDimNew(0.2, 0)
                     }) 
 
                     Instances:Create("UIStroke", {
@@ -2629,7 +3026,7 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["Popover"].Instance,
-                CornerRadius = UDimNew(0, 8)
+                CornerRadius = UDimNew(0, 6)
             }) 
 
             Items["PopoverStroke"] = Instances:Create("UIStroke", {
@@ -2653,7 +3050,7 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["PopoverBody"].Instance,
-                CornerRadius = UDimNew(0, 8)
+                CornerRadius = UDimNew(0, 6)
             }) 
 
             Instances:Create("TextLabel", {
@@ -2690,7 +3087,7 @@ local Library do
 
                 Instances:Create("UICorner", {
                     Parent = Button.Instance,
-                    CornerRadius = UDimNew(0, 6)
+                    CornerRadius = UDimNew(0.2, 0)
                 }) 
 
                 Instances:Create("UIStroke", {
@@ -2782,6 +3179,8 @@ local Library do
             local Current = PopoverId
 
             if Bool then 
+                Window:SetConfigPanel(false)
+
                 Items["Popover"].Instance.Visible = true
 
                 Items["PopoverBody"]:Tween(PopoverInfo, {GroupTransparency = 0, Position = UDim2New(0, 0, 0, 0)})
@@ -2793,6 +3192,645 @@ local Library do
                 Hide.Tween.Completed:Once(function()
                     if Current == PopoverId then
                         Items["Popover"].Instance.Visible = false
+                    end
+                end)
+            end
+        end
+
+        -- config manager: panel under the header controls
+        local PanelOpen = false
+        local PanelId = 0
+        local PanelInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+        local PanelWidth, PanelHeight = 268, 314
+
+        local ConfigSelected = nil
+        local ConfigRows = { }
+        local DialogOpen = false
+
+        local AutoloadPath = Library.Folders.Directory .. "/autoload.txt"
+
+        local ConfigPath = function(Name)
+            return Library.Folders.Configs .. "/" .. Name .. ".json"
+        end
+
+        local Notify = function(Text, Description)
+            Library:Notification(Text, Description, 4)
+        end
+
+        local ReadAutoload = function()
+            local Success, Result = pcall(function()
+                if isfile(AutoloadPath) then
+                    return readfile(AutoloadPath)
+                end
+            end)
+
+            if Success and type(Result) == "string" then
+                return (string.match(Result, "^%s*(.-)%s*$"))
+            end
+
+            return nil
+        end
+
+        if ConfigButton then
+            Items["ConfigPanel"] = Instances:Create("Frame", {
+                Parent = Items["MainFrame"].Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                AnchorPoint = Vector2New(1, 0),
+                Position = UDim2New(1, -12, 0, Header - 8),
+                Size = UDim2New(0, PanelWidth, 0, PanelHeight),
+                Visible = false,
+                BorderSizePixel = 0,
+                ZIndex = 70,
+                BackgroundColor3 = FromRGB(14, 14, 14)
+            }) 
+
+            Instances:Create("UICorner", {
+                Parent = Items["ConfigPanel"].Instance,
+                CornerRadius = UDimNew(0, 6)
+            }) 
+
+            Items["ConfigStroke"] = Instances:Create("UIStroke", {
+                Parent = Items["ConfigPanel"].Instance,
+                Color = FromRGB(24, 24, 24),
+                Transparency = 1,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            })  Items["ConfigStroke"]:AddToTheme({Color = "Border"})
+
+            Items["ConfigBody"] = Instances:Create("CanvasGroup", {
+                Parent = Items["ConfigPanel"].Instance,
+                Name = "\0",
+                Active = true,
+                BorderSizePixel = 0,
+                Position = UDim2New(0, 0, 0, -6),
+                Size = UDim2New(1, 0, 1, 0),
+                GroupTransparency = 1,
+                ZIndex = 70,
+                BackgroundColor3 = FromRGB(14, 14, 14)
+            })  Items["ConfigBody"]:AddToTheme({BackgroundColor3 = "Background"})
+
+            Instances:Create("UICorner", {
+                Parent = Items["ConfigBody"].Instance,
+                CornerRadius = UDimNew(0, 6)
+            }) 
+
+            local Body = Items["ConfigBody"].Instance
+
+            local Label = function(Text, X, Y, Width, Height, Size, Bold, Transparency, Alignment)
+                local Item = Instances:Create("TextLabel", {
+                    Parent = Body,
+                    FontFace = Bold and Library.BoldFont or Library.Font,
+                    Text = Text,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    TextTransparency = Transparency or 0,
+                    TextSize = Size or 13,
+                    TextXAlignment = Alignment or Enum.TextXAlignment.Left,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Name = "\0",
+                    Position = UDim2New(0, X, 0, Y),
+                    Size = UDim2New(0, Width, 0, Height),
+                    ZIndex = 71
+                })  Item:AddToTheme({TextColor3 = "Text"})
+
+                return Item
+            end
+
+            local PanelButton = function(Text, X, Y, Width, Style, Callback)
+                local Color = Style == "primary" and FromRGB(100, 100, 108) or (Style == "danger" and FromRGB(201, 62, 62) or FromRGB(11, 11, 11))
+
+                local Button = Instances:Create("TextButton", {
+                    Parent = Body,
+                    FontFace = Library.Font,
+                    Text = Text,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    TextSize = 13,
+                    AutoButtonColor = false,
+                    BorderSizePixel = 0,
+                    Name = "\0",
+                    Position = UDim2New(0, X, 0, Y),
+                    Size = UDim2New(0, Width, 0, 28),
+                    ZIndex = 71,
+                    BackgroundColor3 = Color
+                })  Button:AddToTheme({TextColor3 = "Text"})
+
+                if Style == "primary" then
+                    Button:AddToTheme({BackgroundColor3 = "Accent"})
+                elseif Style ~= "danger" then
+                    Button:AddToTheme({BackgroundColor3 = "Element"})
+                end
+
+                Instances:Create("UICorner", {
+                    Parent = Button.Instance,
+                    CornerRadius = UDimNew(0.2, 0)
+                }) 
+
+                if Style ~= "primary" and Style ~= "danger" then
+                    Instances:Create("UIStroke", {
+                        Parent = Button.Instance,
+                        Color = FromRGB(24, 24, 24),
+                        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                    }):AddToTheme({Color = "Border"})
+                end
+
+                Library:AddPress(Button, 0.95)
+
+                Button:OnHover(function()
+                    if Style == "primary" or Style == "danger" then
+                        Button:Tween(nil, {BackgroundTransparency = 0.2})
+                    else
+                        Button:Tween(nil, {BackgroundColor3 = Library.Theme.Border})
+                    end
+                end)
+
+                Button:OnHoverLeave(function()
+                    if Style == "primary" or Style == "danger" then
+                        Button:Tween(nil, {BackgroundTransparency = 0})
+                    else
+                        Button:Tween(nil, {BackgroundColor3 = Library.Theme.Element})
+                    end
+                end)
+
+                Button:Connect("MouseButton1Click", Callback)
+
+                return Button
+            end
+
+            Label("Config manager", 12, 10, PanelWidth - 24, 16, 13, true)
+
+            -- name box + create
+            Items["ConfigName"] = Instances:Create("TextBox", {
+                Parent = Body,
+                FontFace = Library.Font,
+                Text = "",
+                PlaceholderText = "New config name",
+                PlaceholderColor3 = FromRGB(140, 140, 140),
+                TextColor3 = FromRGB(255, 255, 255),
+                TextSize = 13,
+                ClearTextOnFocus = false,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                BorderSizePixel = 0,
+                Name = "\0",
+                Position = UDim2New(0, 12, 0, 34),
+                Size = UDim2New(0, PanelWidth - 24 - 78, 0, 28),
+                ZIndex = 71,
+                BackgroundColor3 = FromRGB(11, 11, 11)
+            })  Items["ConfigName"]:AddToTheme({TextColor3 = "Text", BackgroundColor3 = "Element"})
+
+            Instances:Create("UICorner", {
+                Parent = Items["ConfigName"].Instance,
+                CornerRadius = UDimNew(0.2, 0)
+            }) 
+
+            Instances:Create("UIPadding", {
+                Parent = Items["ConfigName"].Instance,
+                PaddingLeft = UDimNew(0, 10),
+                PaddingRight = UDimNew(0, 10)
+            }) 
+
+            Items["ConfigNameStroke"] = Instances:Create("UIStroke", {
+                Parent = Items["ConfigName"].Instance,
+                Color = FromRGB(24, 24, 24),
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            })  Items["ConfigNameStroke"]:AddToTheme({Color = "Border"})
+
+            Items["ConfigName"]:Connect("Focused", function()
+                Items["ConfigNameStroke"]:Tween(PanelInfo, {Color = Library.Theme["Light Accent"]})
+            end)
+
+            Items["ConfigName"]:Connect("FocusLost", function()
+                Items["ConfigNameStroke"]:Tween(PanelInfo, {Color = Library.Theme.Border})
+            end)
+
+            Library:Connect(Items["ConfigName"].Instance:GetPropertyChangedSignal("Text"), function()
+                local Box = Items["ConfigName"].Instance
+                local Clean = string.sub(StringGSub(Box.Text, "[^%w%-_ ]", ""), 1, 24)
+
+                if Clean ~= Box.Text then
+                    Box.Text = Clean
+                end
+            end)
+
+            -- list
+            Items["ConfigList"] = Instances:Create("ScrollingFrame", {
+                Parent = Body,
+                Active = true,
+                AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                CanvasSize = UDim2New(0, 0, 0, 0),
+                ScrollBarThickness = 2,
+                ScrollBarImageColor3 = FromRGB(100, 100, 108),
+                MidImage = Library:GetImage("Scrollbar"),
+                TopImage = Library:GetImage("Scrollbar"),
+                BottomImage = Library:GetImage("Scrollbar"),
+                BorderSizePixel = 0,
+                Name = "\0",
+                Position = UDim2New(0, 12, 0, 70),
+                Size = UDim2New(0, PanelWidth - 24, 0, 126),
+                ZIndex = 71,
+                BackgroundColor3 = FromRGB(11, 11, 11)
+            })  Items["ConfigList"]:AddToTheme({BackgroundColor3 = "Inline", ScrollBarImageColor3 = "Accent"})
+
+            Instances:Create("UICorner", {
+                Parent = Items["ConfigList"].Instance,
+                CornerRadius = UDimNew(0, 6)
+            }) 
+
+            Instances:Create("UIStroke", {
+                Parent = Items["ConfigList"].Instance,
+                Color = FromRGB(24, 24, 24),
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            }):AddToTheme({Color = "Border"})
+
+            Instances:Create("UIPadding", {
+                Parent = Items["ConfigList"].Instance,
+                PaddingTop = UDimNew(0, 4),
+                PaddingBottom = UDimNew(0, 4),
+                PaddingLeft = UDimNew(0, 4),
+                PaddingRight = UDimNew(0, 6)
+            }) 
+
+            Instances:Create("UIListLayout", {
+                Parent = Items["ConfigList"].Instance,
+                Padding = UDimNew(0, 3),
+                SortOrder = Enum.SortOrder.LayoutOrder
+            }) 
+
+            Items["ConfigEmpty"] = Label("No configs yet", 12, 120, PanelWidth - 24, 18, 12, false, 0.55, Enum.TextXAlignment.Center)
+
+            -- autoload switch
+            Label("Autoload selected on startup", 12, 282, PanelWidth - 24 - 44, 20, 12, false, 0.35)
+
+            Items["AutoTrack"] = Instances:Create("Frame", {
+                Parent = Body,
+                Name = "\0",
+                AnchorPoint = Vector2New(1, 0),
+                Position = UDim2New(1, -12, 0, 283),
+                Size = UDim2New(0, 32, 0, 18),
+                BorderSizePixel = 0,
+                ZIndex = 71,
+                BackgroundColor3 = FromRGB(11, 11, 11)
+            })  Items["AutoTrack"]:AddToTheme({BackgroundColor3 = "Element"})
+
+            Instances:Create("UICorner", {
+                Parent = Items["AutoTrack"].Instance,
+                CornerRadius = UDimNew(0.2, 0)
+            }) 
+
+            Items["AutoStroke"] = Instances:Create("UIStroke", {
+                Parent = Items["AutoTrack"].Instance,
+                Color = FromRGB(24, 24, 24),
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            })  Items["AutoStroke"]:AddToTheme({Color = "Border"})
+
+            Items["AutoKnob"] = Instances:Create("Frame", {
+                Parent = Items["AutoTrack"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0, 0.5),
+                Position = UDim2New(0, 3, 0.5, 0),
+                Size = UDim2New(0, 12, 0, 12),
+                BackgroundTransparency = 0.45,
+                BorderSizePixel = 0,
+                ZIndex = 72,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  Items["AutoKnob"]:AddToTheme({BackgroundColor3 = "Text"})
+
+            Instances:Create("UICorner", {
+                Parent = Items["AutoKnob"].Instance,
+                CornerRadius = UDimNew(0.2, 0)
+            }) 
+
+            Items["AutoHit"] = Instances:Create("TextButton", {
+                Parent = Body,
+                Text = "",
+                AutoButtonColor = false,
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                Name = "\0",
+                Position = UDim2New(0, 12, 0, 280),
+                Size = UDim2New(0, PanelWidth - 24, 0, 24),
+                ZIndex = 73
+            }) 
+
+            local UpdateAutoSwitch = function()
+                local On = ConfigSelected ~= nil and ReadAutoload() == ConfigSelected
+
+                if On then
+                    Items["AutoTrack"]:ChangeItemTheme({BackgroundColor3 = "Accent"})
+                    Items["AutoStroke"]:ChangeItemTheme({Color = "Light Accent"})
+
+                    Items["AutoTrack"]:Tween(PanelInfo, {BackgroundColor3 = Library.Theme.Accent})
+                    Items["AutoStroke"]:Tween(PanelInfo, {Color = Library.Theme["Light Accent"]})
+                    Items["AutoKnob"]:Tween(PanelInfo, {Position = UDim2New(0, 17, 0.5, 0), BackgroundTransparency = 0})
+                else
+                    Items["AutoTrack"]:ChangeItemTheme({BackgroundColor3 = "Element"})
+                    Items["AutoStroke"]:ChangeItemTheme({Color = "Border"})
+
+                    Items["AutoTrack"]:Tween(PanelInfo, {BackgroundColor3 = Library.Theme.Element})
+                    Items["AutoStroke"]:Tween(PanelInfo, {Color = Library.Theme.Border})
+                    Items["AutoKnob"]:Tween(PanelInfo, {Position = UDim2New(0, 3, 0.5, 0), BackgroundTransparency = 0.45})
+                end
+            end
+
+            local RefreshConfigs
+
+            local BuildRow = function(Name, IsAuto, Index)
+                local Selected = Name == ConfigSelected
+
+                local Row = Instances:Create("TextButton", {
+                    Parent = Items["ConfigList"].Instance,
+                    Text = "",
+                    AutoButtonColor = false,
+                    BorderSizePixel = 0,
+                    Name = "\0",
+                    LayoutOrder = Index,
+                    Size = UDim2New(1, 0, 0, 28),
+                    ZIndex = 72,
+                    BackgroundTransparency = Selected and 0.84 or 1,
+                    BackgroundColor3 = FromRGB(100, 100, 108)
+                })  Row:AddToTheme({BackgroundColor3 = "Accent"})
+
+                Instances:Create("UICorner", {
+                    Parent = Row.Instance,
+                    CornerRadius = UDimNew(0.2, 0)
+                }) 
+
+                local RowStroke = Instances:Create("UIStroke", {
+                    Parent = Row.Instance,
+                    Color = FromRGB(182, 182, 192),
+                    Transparency = Selected and 0.6 or 1,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                })  RowStroke:AddToTheme({Color = "Light Accent"})
+
+                Instances:Create("TextLabel", {
+                    Parent = Row.Instance,
+                    FontFace = Library.Font,
+                    Text = Name,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    TextTransparency = Selected and 0 or 0.25,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Name = "\0",
+                    Position = UDim2New(0, 10, 0, 0),
+                    Size = UDim2New(1, IsAuto and -58 or -20, 1, 0),
+                    ZIndex = 73
+                }):AddToTheme({TextColor3 = "Text"})
+
+                if IsAuto then
+                    local Badge = Instances:Create("TextLabel", {
+                        Parent = Row.Instance,
+                        FontFace = Library.BoldFont,
+                        Text = "AUTO",
+                        TextColor3 = FromRGB(182, 182, 192),
+                        TextSize = 9,
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        Name = "\0",
+                        AnchorPoint = Vector2New(1, 0.5),
+                        Position = UDim2New(1, -8, 0.5, 0),
+                        Size = UDim2New(0, 34, 0, 14),
+                        ZIndex = 73
+                    })  Badge:AddToTheme({TextColor3 = "Light Accent"})
+                end
+
+                Row:OnHover(function()
+                    if Name ~= ConfigSelected then
+                        Row:Tween(nil, {BackgroundTransparency = 0.93})
+                    end
+                end)
+
+                Row:OnHoverLeave(function()
+                    if Name ~= ConfigSelected then
+                        Row:Tween(nil, {BackgroundTransparency = 1})
+                    end
+                end)
+
+                Row:Connect("MouseButton1Click", function()
+                    ConfigSelected = Name
+                    RefreshConfigs()
+                end)
+
+                TableInsert(ConfigRows, Row)
+            end
+
+            RefreshConfigs = function()
+                for Index, Row in ConfigRows do
+                    Row:Clean()
+                end
+
+                ConfigRows = { }
+
+                local Names = { }
+                local Success, Files = pcall(listfiles, Library.Folders.Configs)
+
+                if Success and type(Files) == "table" then
+                    for Index, Path in Files do
+                        local Name = string.match(Path, "([^/\\]+)%.json$")
+
+                        if Name then
+                            TableInsert(Names, Name)
+                        end
+                    end
+                end
+
+                table.sort(Names, function(A, B)
+                    return StringLower(A) < StringLower(B)
+                end)
+
+                if ConfigSelected and not table.find(Names, ConfigSelected) then
+                    ConfigSelected = nil
+                end
+
+                local Auto = ReadAutoload()
+
+                for Index, Name in Names do
+                    BuildRow(Name, Name == Auto, Index)
+                end
+
+                Items["ConfigEmpty"].Instance.Visible = #Names == 0
+
+                UpdateAutoSwitch()
+            end
+
+            local NeedSelection = function()
+                if not ConfigSelected then
+                    Notify("Config", "Select a config from the list first")
+                    return false
+                end
+
+                return true
+            end
+
+            -- actions
+            local ActionWidth = (PanelWidth - 24 - 10) / 3
+
+            PanelButton("Load", 12, 204, ActionWidth, "primary", function()
+                if not NeedSelection() then
+                    return
+                end
+
+                local Success, Content = pcall(readfile, ConfigPath(ConfigSelected))
+
+                if Success and pcall(Library.LoadConfig, Library, Content) then
+                    Notify("Config", "Loaded " .. ConfigSelected)
+                else
+                    Notify("Config", "Could not load " .. ConfigSelected)
+                end
+            end)
+
+            PanelButton("Save", 12 + ActionWidth + 5, 204, ActionWidth, "default", function()
+                if not NeedSelection() then
+                    return
+                end
+
+                if pcall(writefile, ConfigPath(ConfigSelected), Library:GetConfig()) then
+                    Notify("Config", "Saved " .. ConfigSelected)
+                else
+                    Notify("Config", "Could not save " .. ConfigSelected)
+                end
+            end)
+
+            PanelButton("Delete", 12 + (ActionWidth + 5) * 2, 204, ActionWidth, "danger", function()
+                if not NeedSelection() or DialogOpen then
+                    return
+                end
+
+                local Target = ConfigSelected
+                DialogOpen = true
+
+                Library:Dialog({
+                    Parent = Items["MainFrame"],
+                    Title = "Delete config?",
+                    Description = "\"" .. Target .. "\" will be permanently deleted.",
+                    Buttons = {
+                        {Name = "Cancel", Callback = function()
+                            DialogOpen = false
+                        end},
+                        {Name = "Delete", Style = "danger", Callback = function()
+                            DialogOpen = false
+
+                            pcall(delfile, ConfigPath(Target))
+
+                            if ReadAutoload() == Target then
+                                pcall(delfile, AutoloadPath)
+                            end
+
+                            Notify("Config", "Deleted " .. Target)
+                            RefreshConfigs()
+                        end}
+                    },
+                    OnDismiss = function()
+                        DialogOpen = false
+                    end
+                })
+            end)
+
+            local HalfWidth = (PanelWidth - 24 - 5) / 2
+
+            PanelButton("Export", 12, 238, HalfWidth, "default", function()
+                if typeof(setclipboard) == "function" then
+                    setclipboard(Library:GetConfig())
+                    Notify("Config", "Copied the current config to your clipboard")
+                else
+                    Notify("Config", "Your executor has no clipboard support")
+                end
+            end)
+
+            PanelButton("Import", 12 + HalfWidth + 5, 238, HalfWidth, "default", function()
+                if typeof(getclipboard) ~= "function" then
+                    Notify("Config", "Your executor has no clipboard support")
+                    return
+                end
+
+                if pcall(Library.LoadConfig, Library, getclipboard()) then
+                    Notify("Config", "Imported config from clipboard")
+                else
+                    Notify("Config", "Clipboard does not hold a valid config")
+                end
+            end)
+
+            -- create (below the list so the first row of buttons stays the main actions)
+            PanelButton("Create", PanelWidth - 12 - 70, 34, 70, "primary", function()
+                local Name = string.match(Items["ConfigName"].Instance.Text, "^%s*(.-)%s*$")
+
+                if Name == "" then
+                    Notify("Config", "Type a name first")
+                    return
+                end
+
+                if isfile(ConfigPath(Name)) then
+                    Notify("Config", "\"" .. Name .. "\" already exists")
+                    return
+                end
+
+                if pcall(writefile, ConfigPath(Name), Library:GetConfig()) then
+                    ConfigSelected = Name
+                    Items["ConfigName"].Instance.Text = ""
+
+                    Notify("Config", "Created " .. Name)
+                    RefreshConfigs()
+                else
+                    Notify("Config", "Could not create " .. Name)
+                end
+            end)
+
+            Items["AutoHit"]:Connect("MouseButton1Click", function()
+                if not NeedSelection() then
+                    return
+                end
+
+                if ReadAutoload() == ConfigSelected then
+                    pcall(delfile, AutoloadPath)
+                    Notify("Config", "Autoload disabled")
+                else
+                    pcall(writefile, AutoloadPath, ConfigSelected)
+                    Notify("Config", ConfigSelected .. " will load on startup")
+                end
+
+                RefreshConfigs()
+            end)
+
+            ConfigButton:Connect("MouseButton1Click", function()
+                Window:SetConfigPanel(not PanelOpen)
+            end)
+
+            Library:Connect(UserInputService.InputBegan, function(Input)
+                if PanelOpen and not DialogOpen and IsPress(Input) and not Library:IsMouseOverFrame(Items["ConfigPanel"]) and not Library:IsMouseOverFrame(ConfigButton) then
+                    Window:SetConfigPanel(false)
+                end
+            end)
+
+            Window.RefreshConfigs = RefreshConfigs
+        end
+
+        function Window:SetConfigPanel(Bool)
+            if not Items["ConfigPanel"] or PanelOpen == Bool then
+                return
+            end
+
+            PanelOpen = Bool
+
+            PanelId += 1
+            local Current = PanelId
+
+            if Bool then 
+                Window:SetScalePopover(false)
+
+                Window.RefreshConfigs()
+
+                Items["ConfigPanel"].Instance.Visible = true
+
+                Items["ConfigBody"]:Tween(PanelInfo, {GroupTransparency = 0, Position = UDim2New(0, 0, 0, 0)})
+                Items["ConfigStroke"]:Tween(PanelInfo, {Transparency = 0})
+            else
+                local Hide = Items["ConfigBody"]:Tween(PanelInfo, {GroupTransparency = 1, Position = UDim2New(0, 0, 0, -6)})
+                Items["ConfigStroke"]:Tween(PanelInfo, {Transparency = 1})
+
+                Hide.Tween.Completed:Once(function()
+                    if Current == PanelId then
+                        Items["ConfigPanel"].Instance.Visible = false
                     end
                 end)
             end
@@ -2860,7 +3898,7 @@ local Library do
 
         Instances:Create("UICorner", {
             Parent = Items["Float"].Instance,
-            CornerRadius = UDimNew(1, 0)
+            CornerRadius = UDimNew(0.2, 0)
         }) 
 
         Items["FloatScale"] = Instances:Create("UIScale", {
@@ -2870,7 +3908,7 @@ local Library do
 
         Items["FloatStroke"] = Instances:Create("UIStroke", {
             Parent = Items["Float"].Instance,
-            Color = FromRGB(138, 166, 255),
+            Color = FromRGB(182, 182, 192),
             Thickness = 1.5,
             Transparency = 1,
             ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -2878,7 +3916,7 @@ local Library do
 
         Items["FloatGlow"] = Instances:Create("ImageLabel", {
             Parent = Items["Float"].Instance,
-            ImageColor3 = FromRGB(88, 122, 255),
+            ImageColor3 = FromRGB(100, 100, 108),
             ImageTransparency = 1,
             AnchorPoint = Vector2New(0.5, 0.5),
             Image = "rbxassetid://112971167999062",
@@ -3123,9 +4161,53 @@ local Library do
             end
         end)
 
+        -- Window:SetPlayerBox({Name = "Display", Username = "user", UserId = 1, Avatar = "rbxassetid://...", Status = Color3 | false})
+        function Window:SetPlayerBox(Info)
+            if not Items["PlayerName"] then
+                return
+            end
+
+            Info = type(Info) == "table" and Info or { }
+
+            local Username = StringGSub(tostring(Info.Username or Info.username or LocalPlayer.Name), "^@", "")
+
+            Items["PlayerName"].Instance.Text = tostring(Info.Name or Info.name or Info.DisplayName or LocalPlayer.DisplayName)
+            Items["PlayerUser"].Instance.Text = "@" .. Username
+
+            local Avatar = Info.Avatar or Info.avatar
+
+            if Avatar then
+                Library:ApplyIcon(Items["Avatar"], Avatar)
+            else
+                local UserId = Info.UserId or Info.userid or LocalPlayer.UserId
+
+                Library:Thread(function()
+                    local Success, Content = pcall(Players.GetUserThumbnailAsync, Players, UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+
+                    if Success and Content and Items["Avatar"].Instance.Parent then
+                        Items["Avatar"].Instance.Image = Content
+                    end
+                end)
+            end
+
+            local Status = Info.Status
+
+            if Status == nil then
+                Status = Info.status
+            end
+
+            Items["StatusDot"].Instance.Visible = Status ~= false
+
+            if typeof(Status) == "Color3" then
+                Items["StatusDot"].Instance.BackgroundColor3 = Status
+            end
+        end
+
         Window.Items = Items
 
         Library:LoadIcons()
+
+        Window:SetPlayerBox(type(Data.PlayerBox) == "table" and Data.PlayerBox or Data.playerbox)
 
         Window:SetOpen(true)
         return setmetatable(Window, Library)
@@ -3202,12 +4284,12 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["Inactive"].Instance,
-                CornerRadius = UDimNew(0, 6)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Items["UIStroke"] = Instances:Create("UIStroke", {
                 Parent = Items["Inactive"].Instance,
-                Color = FromRGB(138, 166, 255),
+                Color = FromRGB(182, 182, 192),
                 Transparency = 1,
                 ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             })  Items["UIStroke"]:AddToTheme({Color = "Border"})
@@ -3221,9 +4303,10 @@ local Library do
                 Size = UDim2New(0, 3, 0, 0),
                 ZIndex = 4,
                 BorderSizePixel = 0,
-                BackgroundColor3 = FromRGB(138, 166, 255)
+                BackgroundColor3 = FromRGB(182, 182, 192)
             })  Items["Indicator"]:AddToTheme({BackgroundColor3 = "Light Accent"})
 
+            -- keep-round
             Instances:Create("UICorner", {
                 Parent = Items["Indicator"].Instance,
                 CornerRadius = UDimNew(1, 0)
@@ -3500,7 +4583,7 @@ local Library do
                 BackgroundTransparency = 1,
                 ZIndex = 3,
                 TextSize = 14,
-                BackgroundColor3 = FromRGB(88, 122, 255)
+                BackgroundColor3 = FromRGB(100, 100, 108)
             })  Items["Inactive"]:AddToTheme({TextColor3 = "Text", BackgroundColor3 = "Accent"})
 
             Instances:Create("UIPadding", {
@@ -3511,12 +4594,12 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["Inactive"].Instance,
-                CornerRadius = UDimNew(0, 6)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Items["UIStroke"] = Instances:Create("UIStroke", {
                 Parent = Items["Inactive"].Instance,
-                Color = FromRGB(138, 166, 255),
+                Color = FromRGB(182, 182, 192),
                 Transparency = 1,
                 ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             })  Items["UIStroke"]:AddToTheme({Color = "Light Accent"})
@@ -3530,7 +4613,7 @@ local Library do
                 Size = UDim2New(0, 0, 0, 2),
                 ZIndex = 4,
                 BorderSizePixel = 0,
-                BackgroundColor3 = FromRGB(138, 166, 255)
+                BackgroundColor3 = FromRGB(182, 182, 192)
             })  Items["Bar"]:AddToTheme({BackgroundColor3 = "Light Accent"})
 
             Instances:Create("UICorner", {
@@ -3566,7 +4649,7 @@ local Library do
                 ZIndex = 2,
                 BorderSizePixel = 0,
                 CanvasSize = UDim2New(0, 0, 0, 0),
-                ScrollBarImageColor3 = FromRGB(88, 122, 255),
+                ScrollBarImageColor3 = FromRGB(100, 100, 108),
                 MidImage = Library:GetImage("Scrollbar"),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ScrollBarThickness = 2,
@@ -3600,7 +4683,7 @@ local Library do
                 ZIndex = 2,
                 BorderSizePixel = 0,
                 CanvasSize = UDim2New(0, 0, 0, 0),
-                ScrollBarImageColor3 = FromRGB(88, 122, 255),
+                ScrollBarImageColor3 = FromRGB(100, 100, 108),
                 MidImage = Library:GetImage("Scrollbar"),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ScrollBarThickness = 2,
@@ -3809,7 +4892,7 @@ local Library do
 
             Instances:Create("UICorner", {
                 Parent = Items["Section"].Instance,
-                CornerRadius = UDimNew(0, 3)
+                CornerRadius = UDimNew(0, 6)
             }) 
         end
 
@@ -3951,7 +5034,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = Items["Indicator"].Instance,
-                CornerRadius = UDimNew(1, 0)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             -- knob
@@ -3970,7 +5053,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = Items["Knob"].Instance,
-                CornerRadius = UDimNew(1, 0)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Items["Shadow"] = Instances:Create("ImageLabel", {
@@ -3988,7 +5071,7 @@ end
                 BackgroundTransparency = 1,
                 Position = UDim2New(0.5, 0, 0.5, 0),
                 SliceScale = 0.6000000238418579,
-                ImageColor3 = FromRGB(88, 122, 255),
+                ImageColor3 = FromRGB(100, 100, 108),
                 Size = UDim2New(1, 12, 1, 12),
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Shadow"]:AddToTheme({ImageColor3 = "Accent"})
@@ -4462,7 +5545,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = Items["Button"].Instance,
-                CornerRadius = UDimNew(0, 3)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Items["UIStroke"] = Instances:Create("UIStroke", {
@@ -4539,7 +5622,7 @@ end
 
                 Instances:Create("UICorner", {
                     Parent = SubItems["SubButton"].Instance,
-                    CornerRadius = UDimNew(0, 3)
+                    CornerRadius = UDimNew(0.2, 0)
                 }) 
 
                 SubItems["UIStroke"] = Instances:Create("UIStroke", {
@@ -4669,7 +5752,7 @@ end
             BorderColor3 = FromRGB(0, 0, 0),
             ZIndex = 5,
             BorderSizePixel = 0,
-            BackgroundColor3 = FromRGB(88, 122, 255)
+            BackgroundColor3 = FromRGB(100, 100, 108)
         })  Items["Accent"]:AddToTheme({BackgroundColor3 = "Accent"})
 
         Items["Drag"] = Instances:Create("TextButton", {
@@ -4686,12 +5769,12 @@ end
             Size = UDim2New(0, 15, 0, 15),
             ZIndex = 5,
             TextSize = 14,
-            BackgroundColor3 = FromRGB(88, 122, 255)
+            BackgroundColor3 = FromRGB(100, 100, 108)
         })  Items["Drag"]:AddToTheme({BackgroundColor3 = "Accent"})
 
         Instances:Create("UICorner", {
             Parent = Items["Drag"].Instance,
-            CornerRadius = UDimNew(1, 0)
+            CornerRadius = UDimNew(0.2, 0)
         }) 
     end
 
@@ -4860,7 +5943,7 @@ end
                 ZIndex = 25,
                 BorderSizePixel = 0,
                 CanvasSize = UDim2New(0, 0, 0, 0),
-                ScrollBarImageColor3 = FromRGB(88, 122, 255),
+                ScrollBarImageColor3 = FromRGB(100, 100, 108),
                 MidImage = Library:GetImage("Scrollbar"),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ScrollBarThickness = 2,
@@ -4901,7 +5984,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = Items["RealDropdown"].Instance,
-                CornerRadius = UDimNew(0, 3)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Items["Value"] = Instances:Create("TextLabel", {
@@ -5070,7 +6153,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = OptionButton.Instance,
-                CornerRadius = UDimNew(0, 4)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             local UIPadding = Instances:Create("UIPadding", {
@@ -5428,7 +6511,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = Items["Card"].Instance,
-                CornerRadius = UDimNew(0, 8)
+                CornerRadius = UDimNew(0, 6)
             }) 
 
             Instances:Create("UIStroke", {
@@ -5486,7 +6569,7 @@ end
 
                 Instances:Create("UICorner", {
                     Parent = Items["Image"].Instance,
-                    CornerRadius = UDimNew(0, IsSide and 8 or 6)
+                    CornerRadius = IsSide and UDimNew(0.2, 0) or UDimNew(0, 6)
                 }) 
 
                 Library:ApplyIcon(Items["Image"], Card.Image)
@@ -5622,7 +6705,7 @@ end
 
         local Styles = {
             default = {Color = FromRGB(24, 24, 24), Theme = "Border"},
-            primary = {Color = FromRGB(88, 122, 255), Theme = "Accent"},
+            primary = {Color = FromRGB(100, 100, 108), Theme = "Accent"},
             danger = {Color = FromRGB(201, 62, 62)},
         }
 
@@ -5664,7 +6747,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = Button.Instance,
-                CornerRadius = UDimNew(0, 6)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Library:AddPress(Button, 0.95)
@@ -5793,7 +6876,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = Items["RealKeybind"].Instance,
-                CornerRadius = UDimNew(0, 3)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Items["Value"] = Instances:Create("TextLabel", {
@@ -6050,7 +7133,7 @@ end
 
             Instances:Create("UICorner", {
                 Parent = Items["Box"].Instance,
-                CornerRadius = UDimNew(0, 6)
+                CornerRadius = UDimNew(0.2, 0)
             }) 
 
             Items["BoxStroke"] = Instances:Create("UIStroke", {
