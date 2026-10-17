@@ -7,7 +7,7 @@ local Window = Library:Window({
     Logo = "123748867365417",      -- asset id, rbxassetid://..., or a solar icon name
     Size = UDim2.new(0, 720, 0, 500),
     Scale = 1,                     -- start scale (0.6 - 1.5), changeable with the header scale button
-    Accent = Color3.fromRGB(100, 100, 108), -- default neutral gray; any color recolors the whole UI (also Library:SetAccent(color))
+    Accent = Color3.fromRGB(100, 100, 108), -- first-run default (neutral gray). Users change it in UI Settings and it is remembered
     OnClose = function() print("UI closed") end,
 })
 
@@ -118,6 +118,22 @@ SettingsMain:Section({ Name = "Menu", Side = "Left" }):Label("Press Z to toggle 
 
 -- Header buttons: [scale] [minimize -> floating button] [close -> confirm dialog]
 -- Window:SetScale(1.1)   Window:SetMinimized(true)   Window:Close()   Window:SetTitle("New", "Subtitle")
+
+-- ============================================================ Quick action bar (top right, draggable)
+-- Link components you already made (by Flag), or create standalone ones. Pinned by default.
+Window:QuickAction({ Name = "Aimbot", Type = "Toggle", Flag = "aim_enabled" })
+Window:QuickAction({ Name = "Smoothness", Type = "Slider", Flag = "aim_smooth", Min = 0, Max = 100, Suffix = "%" })
+Window:QuickAction({ Name = "Hitbox", Type = "Dropdown", Flag = "aim_hitbox", Items = { "Head", "Torso", "Legs" } })
+Window:QuickAction({ Name = "Fly", Type = "Toggle", Callback = function(v) print("fly", v) end })       -- own state
+Window:QuickAction({ Name = "Rejoin", Type = "Button", Callback = function() print("rejoin") end })
+-- Every Toggle / Button / Slider / Dropdown you create is ALSO pinnable by the user:
+-- UI Settings > Quick bar > "Pinned actions" (switch on what should show on the bar).
+
+-- ============================================================ UI Settings (automatic)
+-- The "UI Settings" tab is docked at the bottom of the sidebar by itself: window transparency, UI scale, corner roundness,
+-- animation duration, accent color + presets, tags / player box / notifications / lock, keybinds (menu, minimize, quick bar),
+-- quick bar options and the pinned list. Everything is saved to zoophack/ui_settings.json.
+-- Rename it:  SettingsName = "Settings"   Icon:  SettingsIcon = "tuning"   Disable:  UISettings = false   No bar:  QuickBar = false
 
 -- Loads the config you marked "Autoload" in the config manager. Call it after the whole UI is built.
 Library:LoadAutoConfig()
