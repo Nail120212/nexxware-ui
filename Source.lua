@@ -563,7 +563,7 @@ local Library do
     -- Library
     -- Library
     -- Each layer gets its own ScreenGui so DisplayOrder (not hand-tuned ZIndex values) decides what sits on top:
-    -- window < quick action bar < popups (color pickers) < notifications
+    -- quick action bar < window (panels, dialogs) < popups (color pickers) < notifications
     local CreateGui = function(Order, Enabled)
         return Instances:Create("ScreenGui", {
             Parent = gethui(),
@@ -577,7 +577,7 @@ local Library do
     end
 
     Library.Holder = CreateGui(1000, true)
-    Library.QuickHolder = CreateGui(1001, true)
+    Library.QuickHolder = CreateGui(999, true)
     Library.PopupHolder = CreateGui(1002, true)
     Library.NotifGui = CreateGui(1003, true)
     Library.UnusedHolder = CreateGui(0, false)
@@ -2398,8 +2398,8 @@ local Library do
 
         local Items = Quick.Items
 
-        local BarWidth = 236
-        local HeaderHeight = 32
+        local BarWidth = 184
+        local HeaderHeight = 28
         local Margin = 10
 
         local Smooth = TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
@@ -2480,8 +2480,8 @@ local Library do
                 local Dot = Instances:Create("Frame", {
                     Parent = Items["Header"].Instance,
                     Name = "\0",
-                    Position = UDim2New(0, 11 + Column * 5, 0, HeaderHeight / 2 - 7 + Row * 5),
-                    Size = UDim2New(0, 3, 0, 3),
+                    Position = UDim2New(0, 9 + Column * 4, 0, HeaderHeight / 2 - 5 + Row * 4),
+                    Size = UDim2New(0, 2, 0, 2),
                     BackgroundTransparency = 0.6,
                     BorderSizePixel = 0,
                     ZIndex = 7,
@@ -2502,8 +2502,8 @@ local Library do
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Name = "\0",
-            Position = UDim2New(0, 30, 0, 0),
-            Size = UDim2New(1, -66, 1, 0),
+            Position = UDim2New(0, 24, 0, 0),
+            Size = UDim2New(1, -52, 1, 0),
             ZIndex = 7
         })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2516,8 +2516,8 @@ local Library do
             BorderSizePixel = 0,
             Name = "\0",
             AnchorPoint = Vector2New(1, 0.5),
-            Position = UDim2New(1, -6, 0.5, 0),
-            Size = UDim2New(0, 24, 0, 24),
+            Position = UDim2New(1, -4, 0.5, 0),
+            Size = UDim2New(0, 20, 0, 20),
             ZIndex = 8
         })  Items["Collapse"]:AddToTheme({BackgroundColor3 = "Border"})
 
@@ -2529,7 +2529,7 @@ local Library do
             Name = "\0",
             AnchorPoint = Vector2New(0.5, 0.5),
             Position = UDim2New(0.5, 0, 0.5, 0),
-            Size = UDim2New(0, 12, 0, 12),
+            Size = UDim2New(0, 10, 0, 10),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Rotation = Quick.Collapsed and 0 or 180,
@@ -2542,8 +2542,8 @@ local Library do
                 Parent = Items["Chevron"].Instance,
                 Name = "\0",
                 AnchorPoint = Vector2New(0.5, 0.5),
-                Position = UDim2New(0.5, Side * 3, 0.5, 0),
-                Size = UDim2New(0, 7, 0, 2),
+                Position = UDim2New(0.5, Side * 2, 0.5, 0),
+                Size = UDim2New(0, 6, 0, 2),
                 Rotation = Side * 40,
                 BackgroundTransparency = 0.1,
                 BorderSizePixel = 0,
@@ -2580,15 +2580,15 @@ local Library do
 
         Instances:Create("UIPadding", {
             Parent = Items["Body"].Instance,
-            PaddingTop = UDimNew(0, 6),
-            PaddingBottom = UDimNew(0, 6),
-            PaddingLeft = UDimNew(0, 6),
-            PaddingRight = UDimNew(0, 6)
+            PaddingTop = UDimNew(0, 4),
+            PaddingBottom = UDimNew(0, 4),
+            PaddingLeft = UDimNew(0, 4),
+            PaddingRight = UDimNew(0, 4)
         }) 
 
         Instances:Create("UIListLayout", {
             Parent = Items["Body"].Instance,
-            Padding = UDimNew(0, 2),
+            Padding = UDimNew(0, 1),
             SortOrder = Enum.SortOrder.LayoutOrder
         }) 
 
@@ -2598,12 +2598,12 @@ local Library do
             Text = "Nothing pinned yet.\nAdd actions in UI Settings > Quick bar.",
             TextColor3 = FromRGB(255, 255, 255),
             TextTransparency = 0.55,
-            TextSize = 12,
+            TextSize = 11,
             TextWrapped = true,
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Name = "\0",
-            Size = UDim2New(1, 0, 0, 40),
+            Size = UDim2New(1, 0, 0, 34),
             LayoutOrder = 0,
             ZIndex = 7
         })  Items["Empty"]:AddToTheme({TextColor3 = "Text"})
@@ -2884,8 +2884,8 @@ local Library do
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 Name = "\0",
-                Position = UDim2New(0, 10, 0, Top and 4 or 0),
-                Size = UDim2New(1, -Reserved, 0, Top and 18 or 30),
+                Position = UDim2New(0, 8, 0, Top and 3 or 0),
+                Size = UDim2New(1, -Reserved, Top and 0 or 1, Top and 16 or 0),
                 ZIndex = 8
             })  Label:AddToTheme({TextColor3 = "Text"})
 
@@ -2895,15 +2895,15 @@ local Library do
         local Builders = { }
 
         Builders.Toggle = function(Info)
-            local Row = NewRow(Info, 30)
-            local Label = NameLabel(Row, Info, 56)
+            local Row = NewRow(Info, 26)
+            local Label = NameLabel(Row, Info, 46)
 
             local Track = Instances:Create("Frame", {
                 Parent = Row.Instance,
                 Name = "\0",
                 AnchorPoint = Vector2New(1, 0.5),
-                Position = UDim2New(1, -8, 0.5, 0),
-                Size = UDim2New(0, 32, 0, 18),
+                Position = UDim2New(1, -6, 0.5, 0),
+                Size = UDim2New(0, 28, 0, 16),
                 BorderSizePixel = 0,
                 ZIndex = 8,
                 BackgroundColor3 = FromRGB(11, 11, 11)
@@ -2918,7 +2918,7 @@ local Library do
                 Name = "\0",
                 AnchorPoint = Vector2New(0, 0.5),
                 Position = UDim2New(0, 3, 0.5, 0),
-                Size = UDim2New(0, 12, 0, 12),
+                Size = UDim2New(0, 10, 0, 10),
                 BackgroundTransparency = 0.45,
                 BorderSizePixel = 0,
                 ZIndex = 9,
@@ -2932,8 +2932,8 @@ local Library do
                     Parent = Knob.Instance,
                     Name = "\0",
                     AnchorPoint = Vector2New(0.5, 0.5),
-                    Position = UDim2New(0.5, (Index - 2) * 3, 0.5, 0),
-                    Size = UDim2New(0, 1, 0.5, 0),
+                    Position = UDim2New(0.5, 0, 0.5, (Index - 2) * 2),
+                    Size = UDim2New(0, 5, 0, 1),
                     BackgroundTransparency = 0.2,
                     BorderSizePixel = 0,
                     ZIndex = 10,
@@ -2966,15 +2966,15 @@ local Library do
                 end
 
                 Knob:Tween(TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
-                    Position = UDim2New(0, On and 17 or 3, 0.5, 0),
+                    Position = UDim2New(0, On and 15 or 3, 0.5, 0),
                     BackgroundTransparency = On and 0 or 0.45
                 })
 
-                local Stretch = Knob:Tween(TweenInfo.new(0.11, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2New(0, 16, 0, 10)})
+                local Stretch = Knob:Tween(TweenInfo.new(0.11, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2New(0, 14, 0, 8)})
 
                 Stretch.Tween.Completed:Once(function()
                     if Current == KnobToken then
-                        Knob:Tween(TweenInfo.new(0.11, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2New(0, 12, 0, 12)})
+                        Knob:Tween(TweenInfo.new(0.11, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2New(0, 10, 0, 10)})
                     end
                 end)
             end
@@ -2999,8 +2999,8 @@ local Library do
         end
 
         Builders.Button = function(Info)
-            local Row = NewRow(Info, 30)
-            NameLabel(Row, Info, 64)
+            local Row = NewRow(Info, 26)
+            NameLabel(Row, Info, 52)
 
             local Pill = Instances:Create("TextLabel", {
                 Parent = Row.Instance,
@@ -3008,13 +3008,13 @@ local Library do
                 Text = "Run",
                 TextColor3 = FromRGB(255, 255, 255),
                 TextTransparency = 0.2,
-                TextSize = 12,
+                TextSize = 11,
                 BackgroundTransparency = 0,
                 BorderSizePixel = 0,
                 Name = "\0",
                 AnchorPoint = Vector2New(1, 0.5),
-                Position = UDim2New(1, -8, 0.5, 0),
-                Size = UDim2New(0, 44, 0, 20),
+                Position = UDim2New(1, -6, 0.5, 0),
+                Size = UDim2New(0, 38, 0, 16),
                 ZIndex = 8,
                 BackgroundColor3 = FromRGB(11, 11, 11)
             })  Pill:AddToTheme({BackgroundColor3 = "Element", TextColor3 = "Text"})
@@ -3044,7 +3044,7 @@ local Library do
         end
 
         Builders.Label = function(Info)
-            local Row = NewRow(Info, 24)
+            local Row = NewRow(Info, 20)
             Row.Instance.Active = false
             NameLabel(Row, Info, 20).Instance.TextTransparency = 0.45
 
@@ -3052,8 +3052,8 @@ local Library do
         end
 
         Builders.Dropdown = function(Info)
-            local Row = NewRow(Info, 30)
-            NameLabel(Row, Info, 110)
+            local Row = NewRow(Info, 26)
+            NameLabel(Row, Info, 92)
 
             local Pill = Instances:Create("TextLabel", {
                 Parent = Row.Instance,
@@ -3061,14 +3061,14 @@ local Library do
                 Text = "",
                 TextColor3 = FromRGB(255, 255, 255),
                 TextTransparency = 0.1,
-                TextSize = 12,
+                TextSize = 11,
                 TextTruncate = Enum.TextTruncate.AtEnd,
                 BackgroundTransparency = 0,
                 BorderSizePixel = 0,
                 Name = "\0",
                 AnchorPoint = Vector2New(1, 0.5),
-                Position = UDim2New(1, -8, 0.5, 0),
-                Size = UDim2New(0, 92, 0, 20),
+                Position = UDim2New(1, -6, 0.5, 0),
+                Size = UDim2New(0, 76, 0, 16),
                 ZIndex = 8,
                 BackgroundColor3 = FromRGB(11, 11, 11)
             })  Pill:AddToTheme({BackgroundColor3 = "Element", TextColor3 = "Text"})
@@ -3120,10 +3120,10 @@ local Library do
             local Step = Info.Decimals or 1
             local Suffix = Info.Suffix or ""
 
-            local Row = NewRow(Info, 44)
+            local Row = NewRow(Info, 36)
             Row.Instance.Active = true
 
-            NameLabel(Row, Info, 80, true)
+            NameLabel(Row, Info, 64, true)
 
             local Value = Instances:Create("TextLabel", {
                 Parent = Row.Instance,
@@ -3131,22 +3131,22 @@ local Library do
                 Text = "",
                 TextColor3 = FromRGB(255, 255, 255),
                 TextTransparency = 0.4,
-                TextSize = 12,
+                TextSize = 11,
                 TextXAlignment = Enum.TextXAlignment.Right,
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 Name = "\0",
                 AnchorPoint = Vector2New(1, 0),
-                Position = UDim2New(1, -10, 0, 4),
-                Size = UDim2New(0, 70, 0, 18),
+                Position = UDim2New(1, -8, 0, 3),
+                Size = UDim2New(0, 56, 0, 16),
                 ZIndex = 8
             })  Value:AddToTheme({TextColor3 = "Text"})
 
             local Track = Instances:Create("Frame", {
                 Parent = Row.Instance,
                 Name = "\0",
-                Position = UDim2New(0, 10, 0, 28),
-                Size = UDim2New(1, -20, 0, 6),
+                Position = UDim2New(0, 8, 0, 24),
+                Size = UDim2New(1, -16, 0, 5),
                 BorderSizePixel = 0,
                 ZIndex = 8,
                 BackgroundColor3 = FromRGB(11, 11, 11)
@@ -3171,7 +3171,7 @@ local Library do
                 Name = "\0",
                 AnchorPoint = Vector2New(0.5, 0.5),
                 Position = UDim2New(0, 0, 0.5, 0),
-                Size = UDim2New(0, 12, 0, 12),
+                Size = UDim2New(0, 10, 0, 10),
                 BorderSizePixel = 0,
                 ZIndex = 10,
                 BackgroundColor3 = FromRGB(255, 255, 255)
@@ -3217,9 +3217,9 @@ local Library do
             end
 
             Row:Connect("InputBegan", function(Input)
-                if IsPress(Input) and Input.Position.Y - Row.Instance.AbsolutePosition.Y > 18 * Items["BarScale"].Instance.Scale then
+                if IsPress(Input) and Input.Position.Y - Row.Instance.AbsolutePosition.Y > 15 * Items["BarScale"].Instance.Scale then
                     Sliding = true
-                    Thumb:Tween(Quickly, {Size = UDim2New(0, 15, 0, 15)})
+                    Thumb:Tween(Quickly, {Size = UDim2New(0, 13, 0, 13)})
                     Apply(Input)
                 end
             end)
@@ -3233,7 +3233,7 @@ local Library do
             Library:Connect(UserInputService.InputEnded, function(Input)
                 if Sliding and IsPress(Input) then
                     Sliding = false
-                    Thumb:Tween(Quickly, {Size = UDim2New(0, 12, 0, 12)})
+                    Thumb:Tween(Quickly, {Size = UDim2New(0, 10, 0, 10)})
                 end
             end)
 
@@ -6895,14 +6895,14 @@ end
                 CornerRadius = UDimNew(Library.CornerScale, 0)
             }) 
 
-            -- grip stripes on the knob
+            -- horizontal grip stripes on the knob
             for Index = 1, 3 do
                 Instances:Create("Frame", {
                     Parent = Items["Knob"].Instance,
                     Name = "\0",
                     AnchorPoint = Vector2New(0.5, 0.5),
-                    Position = UDim2New(0.5, (Index - 2) * 3, 0.5, 0),
-                    Size = UDim2New(0, 1, 0.5, 0),
+                    Position = UDim2New(0.5, 0, 0.5, (Index - 2) * 3),
+                    Size = UDim2New(0, 6, 0, 1),
                     BackgroundTransparency = 0.2,
                     BorderSizePixel = 0,
                     ZIndex = 7,
