@@ -355,9 +355,22 @@ local Library do
             self = nil
         end
 
-        Instances.MakeDraggable = function(self, Handle)
+        -- MakeDraggable(Handle, Allow)
+        --   Handle = a Gui wrapper (only input on that object drags the frame; most robust) or a predicate function(Input, Gui)
+        --   Allow  = optional predicate function(Input, Gui) used together with a Gui wrapper handle
+        Instances.MakeDraggable = function(self, Handle, Allow)
             if not self.Instance then 
                 return
+            end
+
+            local Source = self
+            local Predicate
+
+            if type(Handle) == "function" then
+                Predicate = Handle
+            elseif type(Handle) == "table" and Handle.Instance then
+                Source = Handle
+                Predicate = Allow
             end
 
             local RawGui = self
@@ -387,13 +400,12 @@ local Library do
                 Gui.Position = UDim2New(StartPosition.X.Scale, X, StartPosition.Y.Scale, Y)
             end
 
-            self:Connect("InputBegan", function(Input)
+            Source:Connect("InputBegan", function(Input)
                 if not IsPress(Input) then
                     return
                 end
 
-                -- Handle is an optional predicate so only part of the frame (the header) starts a drag
-                if Handle and not Handle(Input, Gui) then
+                if Predicate and not Predicate(Input, Gui) then
                     return
                 end
 
@@ -1829,14 +1841,14 @@ local Library do
             end
         end
 
-        Items["RainbowToggle"]:Connect("MouseButton1Down", function()
+        Items["RainbowToggle"]:Connect("MouseButton1Click", function()
             SetRainbow(not IsRainbow)
         end)
 
         Library.SetFlags[Data.Flag .. "RainbowToggle"] = SetRainbow
 
         -- open / close
-        Items["ColorpickerButton"]:Connect("MouseButton1Down", function()
+        Items["ColorpickerButton"]:Connect("MouseButton1Click", function()
             Colorpicker:SetOpen(not Colorpicker.IsOpen)
         end)
 
@@ -2899,19 +2911,32 @@ local Library do
         local DragStart
         local StartPosition
 
+        local CollapsePressed = false
+
+        Items["Collapse"]:Connect("InputBegan", function(Input)
+            if IsPress(Input) then
+                CollapsePressed = true
+            end
+        end)
+
         Items["Header"]:Connect("InputBegan", function(Input)
             if not IsPress(Input) or Quick.Locked then
                 return
             end
 
-            -- keep the collapse button clickable
-            if Library:IsMouseOverFrame(Items["Collapse"]) then
-                return
-            end
+            local Start = Input.Position
 
-            Dragging = true
-            DragStart = Input.Position
-            StartPosition = Items["Bar"].Instance.Position
+            -- wait one tick so a press on the collapse button (which also reaches the header) never starts a drag
+            task.defer(function()
+                if CollapsePressed then
+                    CollapsePressed = false
+                    return
+                end
+
+                Dragging = true
+                DragStart = Start
+                StartPosition = Items["Bar"].Instance.Position
+            end)
         end)
 
         Library:Connect(UserInputService.InputChanged, function(Input)
@@ -4601,9 +4626,20 @@ local Library do
                 Scale = Window.Scale
             }).Instance
 
-            -- only the header strip (logo + title on the left, sub tab bar on the right) drags the window
-            Items["MainFrame"]:MakeDraggable(function(Input, Gui)
-                return not Window.Locked and Library:ScreenPosition(Input).Y - Gui.AbsolutePosition.Y <= Header * ScaleObject.Scale
+            -- an invisible strip behind the header is the drag handle: pressing on empty header space drags the window,
+            -- pressing a button / tab on top of it does not
+            Items["DragHandle"] = Instances:Create("Frame", {
+                Parent = Items["MainFrame"].Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                Size = UDim2New(1, 0, 0, Header),
+                ZIndex = 2,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            }) 
+
+            Items["MainFrame"]:MakeDraggable(Items["DragHandle"], function()
+                return not Window.Locked
             end)
 
             Items["MainFrame"]:MakeResizeable(MinSize, Vector2New(math.huge, math.huge))
@@ -4627,7 +4663,7 @@ local Library do
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })
 
-            Items["Sidebar"] = Instances:Create("Frame", {
+            Items["Sidebar"] = Instances:Create("CanvasGroup", {
                 Parent = Items["MainFrame"].Instance,
                 Name = "\0",
                 BackgroundTransparency = 1,
@@ -4810,7 +4846,7 @@ local Library do
                 Parent = Items["Sidebar"].Instance,
                 Size = UDim2New(0, 1, 1, 0),
                 Name = "\0",
-                Position = UDim2New(1, 0, 0, 0),
+                Position = UDim2New(1, -1, 0, 0),
                 BorderColor3 = FromRGB(0, 0, 0),
                 ZIndex = 2,
                 BorderSizePixel = 0,
@@ -5109,6 +5145,43 @@ local Library do
 
         local Debounce = false 
 
+        -- Open / close fade.
+        -- Only what is really visible is faded, the sidebar and the pages are CanvasGroups that fade as ONE object, and
+        -- nothing is connected per object, so toggling the window stays cheap however many elements the UI has.
+        local FadeTargets = function()
+            local Targets = { }
+            local Root = Items["MainFrame"].Instance
+            local Stack = {Root}
+
+            while #Stack > 0 do
+                local Object = table.remove(Stack)
+
+                if Object ~= Root and Object:IsA("GuiObject") and not Object.Visible then
+                    continue
+                end
+
+                if Object:IsA("CanvasGroup") then
+                    TableInsert(Targets, {Object, "GroupTransparency"})
+                else
+                    local Property = Library:GetTransparencyPropertyFromItem(Object)
+
+                    if type(Property) == "table" then
+                        for Index, Name in Property do
+                            TableInsert(Targets, {Object, Name})
+                        end
+                    elseif Property then
+                        TableInsert(Targets, {Object, Property})
+                    end
+
+                    for Index, Child in Object:GetChildren() do
+                        TableInsert(Stack, Child)
+                    end
+                end
+            end
+
+            return Targets
+        end
+
         function Window:SetOpen(Bool)
             if Debounce or Window.IsOpen == Bool then 
                 return 
@@ -5118,52 +5191,78 @@ local Library do
 
             Debounce = true 
 
-            if Bool then 
-                Items["MainFrame"].Instance.Visible = true
-                ZoomTo(Window.Scale * 0.92)
-            else
+            local Gui = Items["MainFrame"].Instance
+
+            if not Bool then
                 Library:ClosePopups()
                 Window:SetScalePopover(false)
                 Window:SetConfigPanel(false)
-            end
 
-            ZoomTo(Bool and Window.Scale or Window.Scale * 0.92, Bool and TweenInfo.new(Window.FadeSpeed + 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out) or TweenInfo.new(Window.FadeSpeed + 0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.In))
-
-            local Descendants = Items["MainFrame"].Instance:GetDescendants()
-            TableInsert(Descendants, Items["MainFrame"].Instance)
-
-            local NewTween
-            for Index, Value in Descendants do 
-                local ValueIndex = Library:GetTransparencyPropertyFromItem(Value)
-
-                if not ValueIndex then 
-                    continue
+                -- they finish their own hide animation later; they must not take part in this fade
+                if Items["Popover"] then
+                    Items["Popover"].Instance.Visible = false
                 end
 
-                if type(ValueIndex) == "table" then
-                    for _, Property in ValueIndex do 
-                        NewTween = Library:FadeItem(Value, Property, Bool, Window.FadeSpeed)
+                if Items["ConfigPanel"] then
+                    Items["ConfigPanel"].Instance.Visible = false
+                end
+            end
+
+            local Info = TweenInfo.new(Window.FadeSpeed + 0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            local Base = Gui.Position
+            local Shifted = function(Amount)
+                return UDim2New(Base.X.Scale, Base.X.Offset, Base.Y.Scale, Base.Y.Offset + Amount)
+            end
+
+            local Targets = FadeTargets()
+            local Slide
+
+            if Bool then
+                for Index, Pair in Targets do
+                    Pair[3] = Pair[1][Pair[2]]
+
+                    if Pair[3] < 0.999 then
+                        Pair[1][Pair[2]] = 1
                     end
-                else
-                    NewTween = Library:FadeItem(Value, ValueIndex, Bool, Window.FadeSpeed)
                 end
+
+                Gui.Position = Shifted(14)
+                Gui.Visible = true
+
+                for Index, Pair in Targets do
+                    if Pair[3] < 0.999 then
+                        TweenService:Create(Pair[1], Info, {[Pair[2]] = Pair[3]}):Play()
+                    end
+                end
+
+                Slide = TweenService:Create(Gui, Info, {Position = Base})
+            else
+                for Index, Pair in Targets do
+                    Pair[3] = Pair[1][Pair[2]]
+
+                    if Pair[3] < 0.999 then
+                        TweenService:Create(Pair[1], Info, {[Pair[2]] = 1}):Play()
+                    end
+                end
+
+                Slide = TweenService:Create(Gui, Info, {Position = Shifted(10)})
             end
 
-            local Finish = function()
+            Slide.Completed:Once(function()
                 Debounce = false
-                Items["MainFrame"].Instance.Visible = Bool
 
                 if not Bool then
-                    ZoomTo(Window.Scale)
+                    Gui.Visible = false
+                    Gui.Position = Base
+
+                    -- everything is invisible now: put the real values back for the next open
+                    for Index, Pair in Targets do
+                        Pair[1][Pair[2]] = Pair[3]
+                    end
                 end
-            end
+            end)
 
-            if not NewTween then
-                Finish()
-                return
-            end
-
-            Library:Connect(NewTween.Tween.Completed, Finish)
+            Slide:Play()
         end
 
         function Window:SetTitle(Title, Subtitle)
@@ -6223,26 +6322,29 @@ local Library do
 
         Window.Destroy = Window.Close
 
-        -- floating button (shown while minimized). Design notes: 56px circle, 16px screen margin,
-        -- snaps to the nearest side after a drag, fades back when idle, scales in/out (no bouncing).
-        local FloatSize = 56
-        local FloatMargin = 16
-        local FloatShowInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        -- floating pill (shown while minimized):  [ logo  title | move ]
+        -- Click the logo / title to bring the window back. Drag the cross to place it anywhere; it starts at the
+        -- top center and magnets back to the center line. The position is remembered.
+        local FloatMargin = 8
+        local FloatHeight = 38
+        local FloatShowInfo = TweenInfo.new(0.32, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local FloatQuick = TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-        Window.FloatPosition = Vector2New(FloatMargin, MathFloor(View.Y * 0.45))
+        local SavedFloat = Window.Settings.Float
 
-        Items["Float"] = Instances:Create("TextButton", {
+        -- X = horizontal center of the pill, Y = its top edge
+        Window.FloatPosition = (type(SavedFloat) == "table" and tonumber(SavedFloat.X) and tonumber(SavedFloat.Y)) and Vector2New(SavedFloat.X, SavedFloat.Y) or Vector2New(MathFloor(View.X / 2), FloatMargin)
+
+        Items["Float"] = Instances:Create("CanvasGroup", {
             Parent = Library.PopupHolder.Instance,
             Name = "\0",
-            Text = "",
-            AutoButtonColor = false,
-            BorderSizePixel = 0,
             Visible = false,
-            AnchorPoint = Vector2New(0.5, 0.5),
-            Position = UDim2New(0, Window.FloatPosition.X + FloatSize / 2, 0, Window.FloatPosition.Y + FloatSize / 2),
-            Size = UDim2New(0, FloatSize, 0, FloatSize),
-            BackgroundTransparency = 1,
+            AnchorPoint = Vector2New(0.5, 0),
+            Position = UDim2New(0, Window.FloatPosition.X, 0, Window.FloatPosition.Y),
+            Size = UDim2New(0, 0, 0, FloatHeight),
+            AutomaticSize = Enum.AutomaticSize.X,
+            GroupTransparency = 1,
+            BorderSizePixel = 0,
             ZIndex = 20,
             BackgroundColor3 = FromRGB(14, 14, 14)
         })  Items["Float"]:AddToTheme({BackgroundColor3 = "Background"})
@@ -6252,113 +6354,203 @@ local Library do
             CornerRadius = UDimNew(Library.CornerScale, 0)
         }) 
 
-        Items["FloatScale"] = Instances:Create("UIScale", {
-            Parent = Items["Float"].Instance,
-            Scale = 0.5
-        }) 
-
-        Items["FloatStroke"] = Instances:Create("UIStroke", {
+        Instances:Create("UIStroke", {
             Parent = Items["Float"].Instance,
             Color = FromRGB(182, 182, 192),
-            Thickness = 1.5,
-            Transparency = 1,
+            Transparency = 0.5,
             ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        })  Items["FloatStroke"]:AddToTheme({Color = "Light Accent"})
+        }):AddToTheme({Color = "Light Accent"})
 
-        Items["FloatGlow"] = Instances:Create("ImageLabel", {
+        Items["FloatScale"] = Instances:Create("UIScale", {
             Parent = Items["Float"].Instance,
-            ImageColor3 = FromRGB(100, 100, 108),
-            ImageTransparency = 1,
-            AnchorPoint = Vector2New(0.5, 0.5),
-            Image = "rbxassetid://112971167999062",
-            ZIndex = 19,
-            BorderSizePixel = 0,
-            SliceCenter = RectNew(Vector2New(112, 112), Vector2New(147, 147)),
-            ScaleType = Enum.ScaleType.Slice,
-            BackgroundTransparency = 1,
-            Position = UDim2New(0.5, 0, 0.5, 0),
-            SliceScale = 0.8,
+            Scale = 0.88
+        }) 
+
+        Instances:Create("UIListLayout", {
+            Parent = Items["Float"].Instance,
+            FillDirection = Enum.FillDirection.Horizontal,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            SortOrder = Enum.SortOrder.LayoutOrder
+        }) 
+
+        -- left part: logo + title (click = restore)
+        Items["FloatMain"] = Instances:Create("TextButton", {
+            Parent = Items["Float"].Instance,
             Name = "\0",
-            Size = UDim2New(1, 36, 1, 36),
-            BackgroundColor3 = FromRGB(255, 255, 255)
-        })  Items["FloatGlow"]:AddToTheme({ImageColor3 = "Accent"})
+            Text = "",
+            AutoButtonColor = false,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            AutomaticSize = Enum.AutomaticSize.X,
+            Size = UDim2New(0, 0, 1, 0),
+            LayoutOrder = 1,
+            ZIndex = 21,
+            BackgroundColor3 = FromRGB(24, 24, 24)
+        })  Items["FloatMain"]:AddToTheme({BackgroundColor3 = "Border"})
+
+        Instances:Create("UIListLayout", {
+            Parent = Items["FloatMain"].Instance,
+            Padding = UDimNew(0, 8),
+            FillDirection = Enum.FillDirection.Horizontal,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            SortOrder = Enum.SortOrder.LayoutOrder
+        }) 
+
+        Instances:Create("UIPadding", {
+            Parent = Items["FloatMain"].Instance,
+            PaddingLeft = UDimNew(0, 12),
+            PaddingRight = UDimNew(0, 12)
+        }) 
 
         Items["FloatLogo"] = Instances:Create("ImageLabel", {
-            Parent = Items["Float"].Instance,
-            AnchorPoint = Vector2New(0.5, 0.5),
-            Position = UDim2New(0.5, 0, 0.5, 0),
-            Size = UDim2New(0, 28, 0, 28),
+            Parent = Items["FloatMain"].Instance,
+            Name = "\0",
+            Size = UDim2New(0, 22, 0, 22),
             ScaleType = Enum.ScaleType.Fit,
-            ImageTransparency = 1,
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Name = "\0",
-            ZIndex = 21,
+            LayoutOrder = 1,
+            ZIndex = 22,
             BackgroundColor3 = FromRGB(255, 255, 255)
         })  Items["FloatLogo"]:AddToTheme({ImageColor3 = "Image"})
 
         Library:ApplyIcon(Items["FloatLogo"], Window.Logo, "rbxassetid://123748867365417")
 
-        local FloatId = 0
-        local IdleId = 0
-        local Pressed = false
-        local Moved = false
-        local PressStart
-        local PressPosition
+        Items["FloatTitle"] = Instances:Create("TextLabel", {
+            Parent = Items["FloatMain"].Instance,
+            Name = "\0",
+            FontFace = Library.BoldFont,
+            Text = Window.Title,
+            TextColor3 = FromRGB(255, 255, 255),
+            TextSize = 14,
+            AutomaticSize = Enum.AutomaticSize.X,
+            Size = UDim2New(0, 0, 1, 0),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            LayoutOrder = 2,
+            ZIndex = 22
+        })  Items["FloatTitle"]:AddToTheme({TextColor3 = "Text"})
 
-        local Wake = function()
-            IdleId += 1
+        Instances:Create("Frame", {
+            Parent = Items["Float"].Instance,
+            Name = "\0",
+            Size = UDim2New(0, 1, 0, 20),
+            BorderSizePixel = 0,
+            LayoutOrder = 2,
+            ZIndex = 21,
+            BackgroundColor3 = FromRGB(24, 24, 24)
+        }):AddToTheme({BackgroundColor3 = "Border"})
 
-            Items["FloatLogo"]:Tween(FloatQuick, {ImageTransparency = 0})
-            Items["FloatStroke"]:Tween(FloatQuick, {Transparency = 0.35})
-            Items["FloatGlow"]:Tween(FloatQuick, {ImageTransparency = 0.6})
+        -- right part: the move handle (cross)
+        Items["FloatMove"] = Instances:Create("TextButton", {
+            Parent = Items["Float"].Instance,
+            Name = "\0",
+            Text = "",
+            AutoButtonColor = false,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Size = UDim2New(0, 38, 1, 0),
+            LayoutOrder = 3,
+            ZIndex = 21,
+            BackgroundColor3 = FromRGB(24, 24, 24)
+        })  Items["FloatMove"]:AddToTheme({BackgroundColor3 = "Border"})
+
+        local Cross = { }
+
+        for Index, Size in {UDim2New(0, 14, 0, 2), UDim2New(0, 2, 0, 14)} do
+            local Bar = Instances:Create("Frame", {
+                Parent = Items["FloatMove"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0.5, 0.5),
+                Position = UDim2New(0.5, 0, 0.5, 0),
+                Size = Size,
+                BackgroundTransparency = 0.25,
+                BorderSizePixel = 0,
+                ZIndex = 22,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  Bar:AddToTheme({BackgroundColor3 = "Text"})
+
+            TableInsert(Cross, Bar)
         end
 
-        local ScheduleIdle = function()
-            IdleId += 1
-            local Current = IdleId
+        -- arrow tips at the four ends of the cross
+        for Index, Offset in {Vector2New(0, -9), Vector2New(0, 9), Vector2New(-9, 0), Vector2New(9, 0)} do
+            local Tip = Instances:Create("Frame", {
+                Parent = Items["FloatMove"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0.5, 0.5),
+                Position = UDim2New(0.5, Offset.X, 0.5, Offset.Y),
+                Size = UDim2New(0, 4, 0, 4),
+                Rotation = 45,
+                BackgroundTransparency = 0.25,
+                BorderSizePixel = 0,
+                ZIndex = 22,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  Tip:AddToTheme({BackgroundColor3 = "Text"})
 
-            task.delay(3, function()
-                if Current == IdleId and Window.Minimized and not Pressed then
-                    Items["FloatLogo"]:Tween(FloatShowInfo, {ImageTransparency = 0.5})
-                    Items["FloatStroke"]:Tween(FloatShowInfo, {Transparency = 0.75})
-                    Items["FloatGlow"]:Tween(FloatShowInfo, {ImageTransparency = 0.85})
-                end
-            end)
+            TableInsert(Cross, Tip)
+        end
+
+        Library:AddPress(Items["FloatMain"], 0.97)
+
+        Items["FloatMain"]:OnHover(function()
+            Items["FloatMain"]:Tween(FloatQuick, {BackgroundTransparency = 0.6})
+        end)
+
+        Items["FloatMain"]:OnHoverLeave(function()
+            Items["FloatMain"]:Tween(FloatQuick, {BackgroundTransparency = 1})
+        end)
+
+        Items["FloatMove"]:OnHover(function()
+            Items["FloatMove"]:Tween(FloatQuick, {BackgroundTransparency = 0.6})
+        end)
+
+        Items["FloatMove"]:OnHoverLeave(function()
+            Items["FloatMove"]:Tween(FloatQuick, {BackgroundTransparency = 1})
+        end)
+
+        Items["FloatMain"]:Connect("MouseButton1Click", function()
+            Window:SetMinimized(false)
+        end)
+
+        local FloatId = 0
+
+        local ClampFloat = function(X, Y)
+            local View = Library:GetViewSize()
+            local Size = Items["Float"].Instance.AbsoluteSize
+            local Half = Size.X / 2
+
+            X = MathClamp(X, Half + 6, math.max(Half + 6, View.X - Half - 6))
+            Y = MathClamp(Y, 6, math.max(6, View.Y - math.max(Size.Y, FloatHeight) - 6))
+
+            return X, Y
         end
 
         local FloatShow = function()
             local Gui = Items["Float"].Instance
-            local View = Library:GetViewSize()
 
             FloatId += 1
 
-            local X = MathClamp(Window.FloatPosition.X, 0, math.max(0, View.X - FloatSize))
-            local Y = MathClamp(Window.FloatPosition.Y, 0, math.max(0, View.Y - FloatSize))
-
-            Gui.Position = UDim2New(0, X + FloatSize / 2, 0, Y + FloatSize / 2)
+            Gui.Position = UDim2New(0, Window.FloatPosition.X, 0, Window.FloatPosition.Y)
             Gui.Visible = true
 
-            Items["FloatScale"].Instance.Scale = 0.5
+            -- the pill sizes itself from its text, so clamp one frame later
+            task.defer(function()
+                local X, Y = ClampFloat(Window.FloatPosition.X, Window.FloatPosition.Y)
+                Gui.Position = UDim2New(0, X, 0, Y)
+            end)
 
+            Items["FloatScale"].Instance.Scale = 0.88
             Items["FloatScale"]:Tween(FloatShowInfo, {Scale = 1})
-            Items["Float"]:Tween(FloatShowInfo, {BackgroundTransparency = 0})
-
-            Wake()
-            ScheduleIdle()
+            Items["Float"]:Tween(FloatShowInfo, {GroupTransparency = 0})
         end
 
         local FloatHide = function()
             FloatId += 1
             local Current = FloatId
 
-            IdleId += 1
-
-            Items["FloatScale"]:Tween(FloatQuick, {Scale = 0.5})
-            Items["Float"]:Tween(FloatQuick, {BackgroundTransparency = 1})
-            Items["FloatLogo"]:Tween(FloatQuick, {ImageTransparency = 1})
-            Items["FloatStroke"]:Tween(FloatQuick, {Transparency = 1})
-            Items["FloatGlow"]:Tween(FloatQuick, {ImageTransparency = 1})
+            Items["FloatScale"]:Tween(FloatQuick, {Scale = 0.9})
+            Items["Float"]:Tween(FloatQuick, {GroupTransparency = 1})
 
             task.delay(0.2, function()
                 if Current == FloatId then
@@ -6367,21 +6559,13 @@ local Library do
             end)
         end
 
-        Items["Float"]:OnHover(function()
-            if not Pressed then
-                Wake()
-                Items["FloatScale"]:Tween(FloatQuick, {Scale = 1.08})
-            end
-        end)
+        -- dragging (cross only)
+        local Pressed = false
+        local Moved = false
+        local PressStart
+        local PressPosition
 
-        Items["Float"]:OnHoverLeave(function()
-            if not Pressed then
-                Items["FloatScale"]:Tween(FloatQuick, {Scale = 1})
-                ScheduleIdle()
-            end
-        end)
-
-        Items["Float"]:Connect("InputBegan", function(Input)
+        Items["FloatMove"]:Connect("InputBegan", function(Input)
             if IsPress(Input) then
                 Pressed = true
                 Moved = false
@@ -6389,8 +6573,7 @@ local Library do
                 PressStart = Input.Position
                 PressPosition = Items["Float"].Instance.Position
 
-                Items["FloatScale"]:Tween(FloatQuick, {Scale = 0.94})
-                Wake()
+                Items["FloatScale"]:Tween(FloatQuick, {Scale = 0.96})
             end
         end)
 
@@ -6405,18 +6588,12 @@ local Library do
 
             local Delta = Input.Position - PressStart
 
-            if not Moved and Delta.Magnitude > 6 then
+            if not Moved and Delta.Magnitude > 3 then
                 Moved = true
             end
 
             if Moved then
-                local View = Library:GetViewSize()
-
-                local Half = FloatSize / 2
-
-                local X = MathClamp(PressPosition.X.Offset + Delta.X, Half, math.max(Half, View.X - Half))
-                local Y = MathClamp(PressPosition.Y.Offset + Delta.Y, Half, math.max(Half, View.Y - Half))
-
+                local X, Y = ClampFloat(PressPosition.X.Offset + Delta.X, PressPosition.Y.Offset + Delta.Y)
                 Items["Float"].Instance.Position = UDim2New(0, X, 0, Y)
             end
         end)
@@ -6431,25 +6608,27 @@ local Library do
             Items["FloatScale"]:Tween(FloatQuick, {Scale = 1})
 
             if not Moved then
-                Window:SetMinimized(false)
                 return
             end
 
-            -- snap to the nearest side
             local Gui = Items["Float"].Instance
             local View = Library:GetViewSize()
 
-            local X = Gui.Position.X.Offset - FloatSize / 2
-            local Y = Gui.Position.Y.Offset - FloatSize / 2
+            local X, Y = ClampFloat(Gui.Position.X.Offset, Gui.Position.Y.Offset)
 
-            local SnapX = (X + FloatSize / 2 < View.X / 2) and FloatMargin or (View.X - FloatSize - FloatMargin)
-            local SnapY = MathClamp(Y, FloatMargin, math.max(FloatMargin, View.Y - FloatSize - FloatMargin))
+            -- magnet to the horizontal center line
+            if math.abs(X - View.X / 2) < 28 then
+                X = MathFloor(View.X / 2)
+            end
 
-            Window.FloatPosition = Vector2New(SnapX, SnapY)
+            Window.FloatPosition = Vector2New(X, Y)
+            Window.Settings.Float = {X = MathFloor(X), Y = MathFloor(Y)}
 
-            TweenService:Create(Gui, TweenInfo.new(0.32, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2New(0, SnapX + FloatSize / 2, 0, SnapY + FloatSize / 2)}):Play()
+            if Window.SaveSettings then
+                Window:SaveSettings()
+            end
 
-            ScheduleIdle()
+            TweenService:Create(Gui, TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2New(0, X, 0, Y)}):Play()
         end)
 
         -- waits out a running open/close animation before doing something
@@ -6879,7 +7058,7 @@ local Library do
             if Bool then 
                 if not Content.Instance.Visible or Content.Instance.GroupTransparency >= 0.99 then
                     Content.Instance.Position = UDim2New(0.5, 0, 0.5, 14)
-                    Items["PageScale"].Instance.Scale = 0.97
+                    Items["PageScale"].Instance.Scale = 1
                 end
 
                 Content.Instance.Visible = true
@@ -6900,7 +7079,7 @@ local Library do
 
         Library:AddPress(Items["Inactive"], 0.97)
 
-        Items["Inactive"]:Connect("MouseButton1Down", function()
+        Items["Inactive"]:Connect("MouseButton1Click", function()
             for Index, Value in Page.Window.Pages do
                 Value:Turn(Value == Page)
             end
@@ -7146,7 +7325,7 @@ local Library do
             if Bool then 
                 if not Content.Instance.Visible or Content.Instance.GroupTransparency >= 0.99 then
                     Content.Instance.Position = UDim2New(0.5, 0, 0.5, 12)
-                    Items["PageScale"].Instance.Scale = 0.975
+                    Items["PageScale"].Instance.Scale = 1
                 end
 
                 Content.Instance.Visible = true
@@ -7168,7 +7347,7 @@ local Library do
         -- every page owns its sub tabs (they used to share one window-wide list and switched each other off)
         Library:AddPress(Items["Inactive"], 0.95)
 
-        Items["Inactive"]:Connect("MouseButton1Down", function()
+        Items["Inactive"]:Connect("MouseButton1Click", function()
             for Index, Value in SubPage.Page.SubPages do
                 Value:Turn(Value == SubPage)
             end
@@ -7712,7 +7891,7 @@ end
             end
         end
 
-        Items["Toggle"]:Connect("MouseButton1Down", function()
+        Items["Toggle"]:Connect("MouseButton1Click", function()
             Toggle:Set(not Toggle.Value)
         end)
 
@@ -7960,14 +8139,14 @@ end
                 SubItems["SubButton"].Instance.Visible = Bool
             end
 
-            SubItems["SubButton"]:Connect("MouseButton1Down", function()
+            SubItems["SubButton"]:Connect("MouseButton1Click", function()
                 SubButton:Press()
             end)
             
             return SubButton
         end
 
-        Items["Button"]:Connect("MouseButton1Down", function()
+        Items["Button"]:Connect("MouseButton1Click", function()
             Button:Press()
         end)
 
@@ -8543,7 +8722,7 @@ end
                 end
             end
 
-            OptionData.Button:Connect("MouseButton1Down", function()
+            OptionData.Button:Connect("MouseButton1Click", function()
                 OptionData:Set()
             end)
 
@@ -8555,7 +8734,7 @@ end
             Items["Dropdown"].Instance.Visible = Bool
         end
  
-        Items["RealDropdown"]:Connect("MouseButton1Down", function()
+        Items["RealDropdown"]:Connect("MouseButton1Click", function()
             Dropdown:SetOpen(not Dropdown.IsOpen)
         end)
 
